@@ -6,11 +6,11 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 @font-face {
  font-family: 'JetBrains Mono';
  src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
-}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>栈溢出</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-15T04:26:15.000Z" id="date"> 2022-09-15</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-03-02T14:42:39.888Z" id="updated"> 2023-03-02</time></div></span><br><span>Word Count: <div class="control">2.4k</div></span><br><span>Read Time: <div class="control">8 min</div></span></div></div><hr><div id="post-content"><p>继上文点到栈溢出的基础原理，本文来详细演示如何完成一题栈溢出</p>
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>栈溢出</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-15T04:26:15.000Z" id="date"> 2022-09-15</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-03-02T14:51:39.842Z" id="updated"> 2023-03-02</time></div></span><br><span>Word Count: <div class="control">2.4k</div></span><br><span>Read Time: <div class="control">8 min</div></span></div></div><hr><div id="post-content"><p>继上文点到栈溢出的基础原理，本文来详细演示如何完成一题栈溢出</p>
 <h2 id="checksec的使用及保护机制了解"><a href="#checksec的使用及保护机制了解" class="headerlink" title="checksec的使用及保护机制了解"></a>checksec的使用及保护机制了解</h2><p>操作系统提供了许多安全机制来尝试降低或阻止<a target="_blank" rel="noopener" href="https://so.csdn.net/so/search?q=%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA&spm=1001.2101.3001.7020">缓冲区溢出</a>攻击带来的安全风险</p>
 <p>在我们开始尝试做题之前，我们先得知道这道题开启了哪些安全机制，我们又该如何绕过其安全机制</p>
 <p>这里便使用到了checksec工具</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/a.png" alt="a"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022250194.png" alt="a"></p>
 <h3 id="Arch："><a href="#Arch：" class="headerlink" title="Arch："></a>Arch：</h3><p>程序架构信息。判断是拖进64位IDA还是32位？exp编写时p64还是p32函数？</p>
 <h3 id="RELRD"><a href="#RELRD" class="headerlink" title="RELRD:"></a>RELRD:</h3><p>Relocation Read-Only (RELRO)  此项技术主要针对 GOT 改写的攻击方式。它分为两种，Partial RELRO 和 Full RELRO。<br>部分RELRO 易受到攻击，例如攻击者可以<strong>atoi.got为system.plt，进而输入&#x2F;bin&#x2F;sh\x00获得shell</strong><br>完全RELRO 使整个 GOT 只读，从而无法被覆盖，但这样会大大增加程序的启动时间，因为程序在启动之前需要解析所有的符号。</p>
 <p>（看不懂没有关系 ，后续学习将会接触到plt和got表的相关知识）</p>
@@ -18,15 +18,15 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 <h3 id="NX"><a href="#NX" class="headerlink" title="NX:"></a>NX:</h3><p>NX enabled如果这个保护开启就是意味着我们对栈中数据没有执行权限，我们无法在栈中自由更写，但是通过ROP构造执行流的办法可以绕过这个保护(同样将在接下来的学习中讲到)</p>
 <h3 id="PIE"><a href="#PIE" class="headerlink" title="PIE:"></a>PIE:</h3><p>pie保护机制和ASLR相类似，我们已经知道每个数据在计算机中都有自己相应的地址，通过寻址计算机可以成功调用他们，ASLR 将程序运行时的堆栈以及共享库的加载地址随机化，而 PIE 技术则在编译时将程序编译为位置无关, 即程序中的地址在每次运行时都会发生变化，我们将在后续的学习中接触到pie</p>
 <h2 id="ida使用和漏洞分析"><a href="#ida使用和漏洞分析" class="headerlink" title="ida使用和漏洞分析"></a>ida使用和漏洞分析</h2><p>通过checksec我们可以得知此题为32位，我们将其拖进32位ida查看</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/b.png" alt="b"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022250867.png" alt="b"></p>
 <p>左边的function name是此二进制文件中的函数列表，通常主函数的名称是main</p>
 <p>右侧便为此文件的汇编代码</p>
 <p>我们可以按下f5进行ida反编译，将其转化为c语言代码的形式</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/c.png" alt="c"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022250712.png" alt="c"></p>
 <p>main函数的组成相当简单，只有一个子函数shell，我们点进去看看</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/d.png" alt="d"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022250321.png" alt="d"></p>
 <p>第三行，定义了一个buf变量，那么后面的esp+0h和ebp-48h是什么意思？</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/e.png" alt="e"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022251093.png" alt="e"></p>
 <p>我们进行栈溢出的目的是为了覆盖ret addr 从而将程序的返回地址修改成我们需要的，此时read读入的变量buf的位置就是位于ebp再往上0x48处的栈顶</p>
 <p>所以我们可以得知，我们赋值的变量buf离ret addr差了0x48+0x4个字节</p>
 <p>这里为什么还要加4？如果是64位呢，还是加4吗</p>
@@ -38,7 +38,7 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 <p>我们可以依法炮制，翻阅其他函数的内容，我们发现这题的作者并没有直接给我们</p>
 <p>那么system(&#x2F;bin&#x2F;sh)就需要我们自己构造</p>
 <p>我们接着使用shift+f12来打开string窗口，一键找出所有的字符串</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/f.png" alt="f"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022251450.png" alt="f"></p>
 <p>我们惊喜的发现，在data段(不清楚什么是data段的，请仔细观看谢师傅的视频，为虚拟内存映射的相关知识)中存在字符串&#x2F;bin&#x2F;sh</p>
 <p>拥有这段字符串意味着什么？</p>
 <p>我们知道，函数的执行一般需要参数</p>
@@ -50,7 +50,7 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 <p>但是如果将实现这些函数的前置在程序运行时载入到内存中呢？</p>
 <p>这样每一款软件都无需额外的内存占用，并且用户也能成功运行</p>
 <p>所以这里就出现了plt表和got表的概念</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/g.png" alt="g"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022251871.png" alt="g"></p>
 <p>当我们需要调用system函数时，他会去自动寻找system的plt表</p>
 <p>其plt表中存储了system函数的got表的地址</p>
 <p>其就是system在libc(libc同样在谢师傅的视频中有所介绍)中的地址</p>
@@ -59,13 +59,13 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 <p>经过原定好的代码实现，plt表便查找到了libc中system的地址，并将其填充给了got表</p>
 <p>接下来plt表再去got表中，他就得知了地址，就可以成功调用system函数</p>
 <p>所以我们可以将整个流程用下图来展示</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/h.png" alt="h"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022251325.png" alt="h"></p>
 <p>而在之前程序已经调用了system函数进行echo 字符串，所以我们此时再去system的plt表中就能获取到system在libc中的地址</p>
 <p>这里你可能会无法理解，但是在初期的学习我们只需要记住，plt表是调用该函数，got表中存的地址是为了获得真实地址</p>
 <p>发现漏洞后，接下来就要进行shellcode的编写，开始攻击</p>
 <p>以下shellcode的编写需要python基础，这里同样不做解释，请自行学习）</p>
 <p><del>但我个人是没有进行任何额外的python学习(截止到我学习到堆)，不知道这条路是否合理化，请根据自己在学习中遇到的情况自行斟酌</del></p>
-<h2 id="exp的编写"><a href="#exp的编写" class="headerlink" title="exp的编写"></a>exp的编写</h2><p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/i.png" alt="i"></p>
+<h2 id="exp的编写"><a href="#exp的编写" class="headerlink" title="exp的编写"></a>exp的编写</h2><p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022251595.png" alt="i"></p>
 <p><strong>–第二行</strong>建立与靶场的联系(概念不做解释，自行查找)的联系，名称不一定要是io，“ ”中为ip地址，逗号后为端口)</p>
 <p><strong>–第三行</strong>为后续我们获得system的plt表内容的前置条件，括号中为”.&#x2F;文件名”</p>
 <p><strong>–第四行</strong>，接收程序的输出内容，简单的是xxx.recv()  [xxx为你先前命名的名称，比如我的io]</p>

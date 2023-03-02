@@ -6,7 +6,7 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 @font-face {
  font-family: 'JetBrains Mono';
  src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
-}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>复制粘贴问题解决</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-30T02:51:22.000Z" id="date"> 2022-09-30</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-03-02T14:37:53.335Z" id="updated"> 2023-03-02</time></div></span><br><span>Word Count: <div class="control">350</div></span><br><span>Read Time: <div class="control">1 min</div></span></div></div><hr><div id="post-content"><p>Ubuntu20.04无法安装vmtools 或者出现安装了也没办法做到物理机和虚拟机复制粘贴共用</p>
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>复制粘贴问题解决</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-30T02:51:22.000Z" id="date"> 2022-09-30</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-03-02T14:56:58.970Z" id="updated"> 2023-03-02</time></div></span><br><span>Word Count: <div class="control">350</div></span><br><span>Read Time: <div class="control">1 min</div></span></div></div><hr><div id="post-content"><p>Ubuntu20.04无法安装vmtools 或者出现安装了也没办法做到物理机和虚拟机复制粘贴共用</p>
 <p>所以这里我们用open-vm-tools 这是一个vmtools官方承认的开源工具</p>
 <p>其一样可以起到vmtools的作用</p>
 <p>第一步输入下面的指令</p>
@@ -16,22 +16,22 @@ if (window.localStorage.getItem('theme-mode') === 'dark') document.documentEleme
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install open-vm-tools-desktop</span><br></pre></td></tr></table></figure>
 
 <p>但是很遗憾 会出现这样的问题</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/a.png" alt="a"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256174.png" alt="a"></p>
 <p>这时候我们需要更改一下下载源</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/b.png" alt="b"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256916.png" alt="b"></p>
 <p>网上的方法是说在这里搜索software-update 但是我查看了以后发现找不到</p>
 <p>最后找到的解决办法是</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/c.png" alt="c"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256539.png" alt="c"></p>
 <p>因为还没有安装输入法 所以只能先输入set 然后打开设置</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/d.png" alt="d"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256201.png" alt="d"></p>
 <p>一直向下滑 直到看到关于 点进去 找到软件更新 再点进去</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/e.png" alt="e"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256452.png" alt="e"></p>
 <p>如图所示 点开后选择other(也可能显示成其他 看你刚创建虚拟机时的语言选择)</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/f.png" alt="f"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256639.png" alt="f"></p>
 <p>这里挑一个选 我选择的是阿里云的 </p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/g.png" alt="g"></p>
+<p>!<img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256796.png" alt="g"></p>
 <p>退出的时候会提醒你这个 直接点重新载入就好了</p>
-<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/h.png" alt="h"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303022256251.png" alt="h"></p>
 <p>在终端中输入</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
 
