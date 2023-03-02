@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>栈的基础知识 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>栈的基础知识</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-09-13T12:20:05.000Z" id="date"> 2022-09-13</time></div></span><br><span>Last Update: <div class="control"><time datetime="2022-09-20T08:17:39.338Z" id="updated"> 2022-09-20</time></div></span></div></div><hr><div id="post-content"><h2 id="什么是栈？"><a href="#什么是栈？" class="headerlink" title="什么是栈？"></a>什么是栈？</h2><p>在了解栈相关的知识前，我们需要一些汇编代码的基础</p>
+<p>可以将谢师傅的视频作为阅读本文的前提，接下来所出现的名词将不再作解释（19分51秒到35分32秒，以及56分31秒到1时4分为栈部分内容）</p>
+<p>[<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV15v4y1c7XD?is_story_h5=false&p=1&share_from=ugc&share_medium=android&share_plat=android&share_session_id=57c6122a-d3c5-48fb-ab0b-9326e2e92ab1&share_source=COPY&share_tag=s_i&timestamp=1663124295&unique_k=U95yQ9K&vd_source=8543a418a87bc93ee104e52809d057c2">pwn入门]0基础学习程序与计算机-2_哔哩哔哩_bilibili</a></p>
+<p>无妨从栈在语文中的定义理解—&gt;存储货物或供旅客住宿的地方,可引申为仓库、中转站。</p>
+<p>在<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%B3%BB%E7%BB%9F?fromModule=lemma_inlink">计算机系统</a>中，栈则是一个具有以上属性的<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E5%8A%A8%E6%80%81%E5%86%85%E5%AD%98?fromModule=lemma_inlink">动态内存</a>区域。程序可以将数据压入栈中，也可以将数据从栈顶弹出。在i386机器中，栈顶由称为esp的<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8?fromModule=lemma_inlink">寄存器</a>进行定位。入栈的操作使得栈顶的地址减小，出栈的操作使得栈顶的地址增大（<strong>栈是从高地址向低地址增长</strong>）。</p>
+<p>栈分为顺序栈，共享栈，链式栈  这里只介绍<strong>顺序栈</strong></p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/cLbmm"><img src="https://s1.328888.xyz/2022/09/13/cLbmm.webp" alt="cLbmm.webp"></a></p>
+<p>用一个简单的例子来帮助我们理解栈的作用：</p>
+<p>当我们在打开网页A时，我们关闭网页A，进入网页B，关闭网页B，进入网页C</p>
+<p>这个时候如果我们想要返回网页A，我们有两种办法1.重新打开网页A 2.使用回退返回网页A</p>
+<p>在使用第二种方法的过程中，我们会发现需要先返回网页B，浏览器 “回退” 功能的实现，底层使用的就是栈存储结构</p>
+<p>当你关闭网页A后，A就会入栈，我们可以将其理解为上图的a1，关闭网页B后，a2入栈</p>
+<p>所以当我们使用回退的时候，位于低地址的a2就会先于a1出栈，给予用户的体现就是我们先返回了网页B再返回网页A</p>
+<p>有点难以理解？A是如何入栈？入栈后，栈的结构肯定不会只是简简单单的a1，a2</p>
+<p>这里引入<strong>内存地址</strong>这一概念(这里介绍的是物理内存地址)</p>
+<p>什么是内存地址？</p>
+<p>内存地址是一个编号，代表内存空间，内存地址是一种介于硬件软件等不同层级的数据概念，用来访问电脑内存中的数据</p>
+<p>基于操作系统位数的不同，内存地址的表现形式也有所不同</p>
+<p>比如32位下的地址可以为<strong>0x00000001</strong> 64位下的地址可以为<strong>0x0000000000000001</strong></p>
+<p>这里的地址表现形式不同于我们常用的10进制 而是<strong>16进制</strong></p>
+<p>又出现了一个新的知识点，16进制数，似乎在ctf中很常见？</p>
+<p>在高中，我们学过二进制的知识，16进制也是同理</p>
+<h2 id="16进制"><a href="#16进制" class="headerlink" title="16进制"></a>16进制</h2><p>个人认为网上的一些讲解方式虽然详细，对于进制有着全面的帮助，但本文出于方便理解，决定只是对16进制进行引导</p>
+<p>0x1-0x9对应着10进制中的1-9，这个我们可以很快速的理解，那么轮到十进制中的10呢？是0x10？显然不是</p>
+<p>数字不够用来表示了怎么办？我们还有字母可以选择</p>
+<p>0xa-0xF对应着十进制中的10-15 (<strong>这里可以注意到前后的大小写并不一致，是因为16进制的书写对于大小写并没有形式上的要求</strong>)</p>
+<p>这样说是否就大体了解清楚了16进制？这里可以再思考一个小问题，那当我们要表示十进制的16怎么办呢？</p>
+<p>逢16进1，16就表示为了0x10，接下来的17，18 我们就可以表示为0x11和0x12</p>
+<p>让我们把思绪收回到内存地址</p>
+<h2 id="内存地址-物理内存地址"><a href="#内存地址-物理内存地址" class="headerlink" title="内存地址(物理内存地址)"></a>内存地址(物理内存地址)</h2><p>程序和数据平常存储在硬盘等存储器上，不管你开机或关机了，它们都是存在的，不会丢失。硬盘可以存储的东西很多，但其传输数据的速度较慢。所以需要运行程序或打开数据时，这些数据必须从硬盘等存储器上先传到另一种容量小但速度快得多的存储器，之后才送入CPU进行执行处理。这中间的存储器就是内存。</p>
+<p>无论何种存储器，软盘、硬盘、光盘或者内存，都有地址。因为它们要存储数据，所以就必须按一定的单位的数据分配一个地址。有了地址，程序才能找到这些数据。这很好理解，想想你们家为什么要有门牌号即可。</p>
+<p>内存地址将一切数据和命令进行了数字化，他知道其各自对应的位于内存中的哪个位置，这个位置的表现形式就是内存地址</p>
+<p>所以这里可以做一个总结，内存地址并不是数据本身，而是类似于指向标的东西指引计算机寻址找到数据</p>
+<p>例如电脑使用中的快捷方式，他可以出现在任何目录却都能打开你所需要的程序，其原理就是计算机基于内存地址的寻址</p>
+<p>现在我们已经大致了解了地址，但是我们仍然有一个疑问，为什么随着操作系统位数的不同，地址的表现形式也不同呢？</p>
+<h2 id="32位64位操作系统"><a href="#32位64位操作系统" class="headerlink" title="32位64位操作系统"></a>32位64位操作系统</h2><p>在查阅资料时，我发现我对于这一方面的知识非常薄弱，所以操作系统位数的内容篇幅将远超其他部分</p>
+<p>在挑选电脑时，我们会困惑于繁多的cpu类型，诸如常见的拯救者y9000p所搭载的i7-12700h</p>
+<p>这里以inter酷睿处理器的命名规则举例(amd的可以自行了解)，我们会发现有i3，i5，i7，i9四种</p>
+<p>数字越多，处理器性能越好？这是一个常见的误区</p>
+<p>在同代产品中，以<strong>核心数和线程数</strong>作为区分标准</p>
+<h3 id="核心数和线程数"><a href="#核心数和线程数" class="headerlink" title="核心数和线程数"></a>核心数和线程数</h3><p>一开始，cpu只有单核心，所以只能同时进行单进程&#x2F;线程任务</p>
+<p>类似于人类的团队，只有一个人的情况下，只能同时进行一项任务</p>
+<p>随着计算机的发展，单核心的cpu性能出现不足，cpu产商开始在单个物理cpu上增加核心</p>
+<p>这时候我们的团队就迎来的第二个人手，他可以在第一个执行任务时，去独立完成另外的任务</p>
+<p>同时多线程技术本质也是一样，是为了提高单个cpu核心同一时刻能够执行的多线程数的技术</p>
+<p>类似于团队中的一名队员同时处理多项任务</p>
+<h3 id="cpu位数"><a href="#cpu位数" class="headerlink" title="cpu位数"></a>cpu位数</h3><p>你可能会说，上述的核心数和线程数和操作系统位数有什么联系？没有哦，只是一个扩展，做为导入我们cpu位数的前置知识</p>
+<p>CPU位数指的是一个时钟周期内处理器同时寄存和处理的二进制位数，如何理解这句话?</p>
+<p>我们先要知道所有的数字信息在计算机中都是用数字代码表示，为了电路处理方便，就用二进制表示，电路用高电平、低电平表示2个数码“1”和“0”，计算机中所有的信息从输入，存储，处理到输出都是用基于二进制的电信号表示</p>
+<p>对于CPU位数，他等同于CPU中寄存器的位数 &#x3D; CPU一次并行处理的数据宽度。CPU位数越多，则寻址位数越多，处理能力就越强。</p>
+<h3 id="操作系统位数"><a href="#操作系统位数" class="headerlink" title="操作系统位数"></a>操作系统位数</h3><p>操作系统位数的概念是基于cpu位数的</p>
+<p>32位的cpu只能安装32位的操作系统 而64位的cpu既可以安装32位的操作系统也能安装64位的操作系统</p>
+<h2 id="字长，字节，比特"><a href="#字长，字节，比特" class="headerlink" title="字长，字节，比特"></a>字长，字节，比特</h2><p>回到刚才的话题，为什么操作系统位数会影响到地址的表现形式？我们似乎仍然没有搞懂这个问题</p>
+<p>我们还需要引入字长，字节，比特的概念</p>
+<p>在32位操作系统的环境下，一个字长所对应的是4个字节</p>
+<p>在64位操作系统的环境下，一个字长所对应的是8个字节</p>
+<p>而一个字节对应8比特，这无关于操作系统位数</p>
+<p>我们拿刚才32位操作系统下的地址举例 ：0x11223344(为了方便理解，我将相邻的两个用相同的数字表示)</p>
+<p>11，22，33，44各自所对应的就是一个字节，因为32位操作系统下的一个字长所对应的是4字节，所以长度就为0x00000000</p>
+<h2 id="栈的具体结构"><a href="#栈的具体结构" class="headerlink" title="栈的具体结构"></a>栈的具体结构</h2><p>前文我们以后退作为例子，但仍然有一个疑问，栈的具体结构是怎么样的？</p>
+<p>我们简单举一个函数跳转的例子</p>
+<p><a target="_blank" rel="noopener" href="https://imgloc.com/i/cBD1P"><img src="https://s1.328888.xyz/2022/09/14/cBD1P.png" alt="cBD1P.png"></a></p>
+<p>函数A运行过程中跳转到了函数B(A和B的关系比如上一篇文章里面的main函数和fun函数，fun函数是main函数到的子函数)</p>
+<p>此时就会将函数A的栈顶地址放在函数B的栈底，这样当函数B执行完了以后，esp就可以指向ret addr使得eip返回到函数A的栈顶</p>
+<p>（esp，eip如果不清楚概念，请折返回文章头观看谢师傅的视频）</p>
+<p>不知道了解到这里，你是否有一个大胆的想法？我们已经知道，我们pwn的最后目的是写入一段shellcode，以便我们取得flag</p>
+<p>而通常这个shellcode是要调用system(&#x2F;bin&#x2F;sh)这一函数</p>
+<p>已经知道了函数B会返回到ret addr所指向的地址，是否可以修改返回地址？使执行流跳转到system所在的地址</p>
+<p>没错，这就是我们接下来栈溢出的基本原理！</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/09/15/32%E4%BD%8D%E6%A0%88%E6%BA%A2%E5%87%BA/">← Next 栈溢出</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/09/13/pwn%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">pwn入门指南 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>ChenBlog</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%A0%88%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">什么是栈？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#16%E8%BF%9B%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">16进制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80-%E7%89%A9%E7%90%86%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80"><span class="toc-number">3.</span> <span class="toc-text">内存地址(物理内存地址)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#32%E4%BD%8D64%E4%BD%8D%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="toc-number">4.</span> <span class="toc-text">32位64位操作系统</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%95%B0%E5%92%8C%E7%BA%BF%E7%A8%8B%E6%95%B0"><span class="toc-number">4.1.</span> <span class="toc-text">核心数和线程数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#cpu%E4%BD%8D%E6%95%B0"><span class="toc-number">4.2.</span> <span class="toc-text">cpu位数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%BD%8D%E6%95%B0"><span class="toc-number">4.3.</span> <span class="toc-text">操作系统位数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AD%97%E9%95%BF%EF%BC%8C%E5%AD%97%E8%8A%82%EF%BC%8C%E6%AF%94%E7%89%B9"><span class="toc-number">5.</span> <span class="toc-text">字长，字节，比特</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E7%9A%84%E5%85%B7%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">6.</span> <span class="toc-text">栈的具体结构</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
