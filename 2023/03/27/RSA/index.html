@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>RSA | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - 共 $1 行","copy":"复制","copyFinish":"复制成功","expand":"展开"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>RSA</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2023-03-27T05:12:58.000Z" id="date"> 2023-03-27</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2023-03-27T07:59:49.829Z" id="updated"> 2023-03-27</time></div></span><br><span>文章总字数: <div class="control">449</div></span><br><span>预计阅读时间: <div class="control">1 分钟</div></span></div></div><hr><div id="post-content"><h1 id="RSA基本原理"><a href="#RSA基本原理" class="headerlink" title="RSA基本原理"></a>RSA基本原理</h1><p>接触了半年ctf 现在才开始学rsa 233 倒也不为晚 刚好重新学逆向的时候遇到了rsa的题目 那就顺便来学习一下</p>
+<p>rsa的加密实际上就是由明文进行E次方后和N进行取模运算</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">密文＝(明文^E)modN</span><br></pre></td></tr></table></figure>
+
+<p>其中E和N被合称为公钥 记作 <strong>(E,N)</strong></p>
+<p>而解密也可以看作和加密一样 由密文进行D次方后和N进行取模运算得到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">明文＝密文^DmodN</span><br></pre></td></tr></table></figure>
+
+<p>相应的 D和N合称为私钥 记作 <strong>(D,N)</strong></p>
+<p>密钥对则是公钥和私钥的合并 记作<strong>（E，D，N）</strong></p>
+<p>密钥对的生成一共要经过四个步骤 其中还需要一个中间数 这里记作L</p>
+<p>依次是 <strong>求N 求L 求E 求D</strong></p>
+<p><strong>求N</strong> N实际上是由两个质数相乘得到 可以记作 <strong>N &#x3D; P*Q</strong></p>
+<p>求L  L是q-1和p-1的最小公倍数 <strong>L&#x3D;lcm（p－1，q－1）</strong></p>
+<p>求E  E比1大比L小 E和L的最大公约数为1 <strong>gcd（E，L）&#x3D;1</strong></p>
+<p>求D  D要根据E来计算出来 <strong>E＊D mod L ＝ 1</strong></p>
+<h1 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h1><p>比如buu上的一题RSA 给了两个附件 一个存放密文 一个存放公钥</p>
+<p>去这个网站把公钥分解一下</p>
+<p><a target="_blank" rel="noopener" href="http://tool.chacuo.net/cryptrsakeyparse">RSA公私钥分解 Exponent、Modulus，Rsa公私钥指数、系数(模数)分解–查错网 (chacuo.net)</a></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202303271557208.png" alt="image-20230327155727128"></p>
+<p>将模数转化为十进制后 就是N 指数则为E</p>
+<p><a target="_blank" rel="noopener" href="http://www.factordb.com/index.php?query=86934482296048119190666062003494800588905656017203025617216654058378322103517">factordb.com</a>这个网站可以拆解N 得到pq</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p= 285960468890451637935629440372639283459</span><br><span class="line">q= 304008741604601924494328155975272418463</span><br></pre></td></tr></table></figure>
+
+<p>接着进行简单的脚本运算就可以得到明文</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> gmpy2</span><br><span class="line"><span class="keyword">import</span> rsa</span><br><span class="line"></span><br><span class="line">e = <span class="number">65537</span></span><br><span class="line">n = <span class="number">86934482296048119190666062003494800588905656017203025617216654058378322103517</span></span><br><span class="line">p = <span class="number">285960468890451637935629440372639283459</span></span><br><span class="line">q = <span class="number">304008741604601924494328155975272418463</span></span><br><span class="line"></span><br><span class="line">phin = (q-<span class="number">1</span>)*(p-<span class="number">1</span>)</span><br><span class="line">d = gmpy2.invert(e, phin)</span><br><span class="line"></span><br><span class="line">key = rsa.PrivateKey(n, e, <span class="built_in">int</span>(d), p, q)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;C:\\Users\\22346\\Desktop\\flag.enc&quot;</span>, <span class="string">&quot;rb+&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f = f.read()</span><br><span class="line">    <span class="built_in">print</span>(rsa.decrypt(f, key))</span><br></pre></td></tr></table></figure>
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/03/26/NKCTF/">NKCTF2023 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="文章目录">≡</a><a id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#RSA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">RSA基本原理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98"><span class="toc-number">2.</span> <span class="toc-text">例题</span></a></li></ol></div></div><footer><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
