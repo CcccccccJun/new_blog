@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>malloc_consolidate利用 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>malloc_consolidate利用</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2023-04-11T04:21:22.000Z" id="date"> 2023-04-11</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-04-11T05:37:28.195Z" id="updated"> 2023-04-11</time></div></span><br><span>Word Count: <div class="control">1.1k</div></span><br><span>Read Time: <div class="control">4 min</div></span></div></div><hr><div id="post-content"><p>比较强大的一个漏洞  触发的条件很常见 但是效果却很强大 在做NKCTF2023的时候作为压轴题考察了 后来才知道是原题 heapstorm zero</p>
+<h1 id="malloc-consolidate"><a href="#malloc-consolidate" class="headerlink" title="malloc_consolidate()"></a>malloc_consolidate()</h1><p>核心的利用就是依靠这个函数 这个函数有两种作用 第一是可以合并fastbinchunk 第二个是对于堆进行初始化</p>
+<p>在学习fastbin中 我们知道 chunk被释放到fastbin后 其next chunk的Inuse位是不会被置零的</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111239100.png" alt="image-20230411123932006"></p>
+<p>也就不会存在合并chunk这种利用方法</p>
+<p>但是malloc_consolidate函数却可以实现合并fastbin的效果 按照上图的情形 此时触发malloc_consolidate函数 chunk0就会被放入到unsortedbin中 随后根据大小分配到smallbin中</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111241743.png" alt="image-20230411124113716"></p>
+<p>我们先来讲其实现逻辑 触发条件稍等讲</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (get_max_fast () != <span class="number">0</span>) &#123;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  malloc_init_state(av);</span><br><span class="line">  check_malloc_state(av);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数开始执行时 会对于get_max_fast ()的返回值进行判断 如果进程是第一次调用malloc函数时 其返回值为0 此时就会进行堆初始化工作</p>
+<p>如果堆已经初始化完成 此时会调用clear_fastchunks函数清空fastbin的Inuse位</p>
+<p>接着会进行一个嵌套循环 第一次循环遍历fastbin数组 得到链表 随后遍历链表 得到free chunk</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">  Remove each chunk from fast bin and consolidate it, placing it</span></span><br><span class="line"><span class="comment">  then in unsorted bin. Among other reasons for doing this,</span></span><br><span class="line"><span class="comment">  placing in unsorted bin avoids needing to calculate actual bins</span></span><br><span class="line"><span class="comment">  until malloc is sure that chunks aren&#x27;t immediately going to be</span></span><br><span class="line"><span class="comment">  reused anyway.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"></span><br><span class="line">maxfb = &amp;fastbin (av, NFASTBINS - <span class="number">1</span>);</span><br><span class="line">fb = &amp;fastbin (av, <span class="number">0</span>);</span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">  p = atomic_exchange_acq (fb, <span class="literal">NULL</span>);</span><br><span class="line">  <span class="keyword">if</span> (p != <span class="number">0</span>) &#123;</span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">  check_inuse_chunk(av, p);</span><br><span class="line">  nextp = p-&gt;fd;</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">while</span> ( (p = nextp) != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">while</span> (fb++ != maxfb);</span><br></pre></td></tr></table></figure>
+
+<p>对于合并来说 首先是考虑向后合并 这里的向后合并指的是向低地址处</p>
+<p>顺便复习一下向后合并的条件 </p>
+<p>其会对当前chunk的Inuse位进行判断 是否可以和物理相邻低地址处的chunk合并 接着通过prev_size位来索引prev_chunk的地址</p>
+<p>修改其size为合并后的总和 随后让chunk进入unlink函数</p>
+<p>常见的就是topchunk合并  图例下面一并讲</p>
+<p>随后进入向前合并的分支 首先判断物理相邻高地址处的chunk是否为top chunk</p>
+<p>如果为top chunk 则top chunk直接触发向后合并 如下所示布局堆</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x10</span>)</span><br><span class="line">delete(<span class="number">0</span>)</span><br><span class="line">malloc_consolidate()</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111308526.png" alt="image-20230411130840500"></p>
+<p>如果nextchunk不为top chunk的话 则正式进入向前合并</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* consolidate forward */</span></span><br><span class="line"><span class="keyword">if</span> (!nextinuse) &#123;</span><br><span class="line">    unlink(av, nextchunk, bck, fwd);</span><br><span class="line">    size += nextsize;</span><br><span class="line">&#125; <span class="keyword">else</span></span><br><span class="line">    clear_inuse_bit_at_offset(nextchunk, <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+<p>首先先索引到nextchunk 再索引到nextchunk的nextchunk 根据其的Inuse位来判断是否nextchunk被释放 如果被释放 如下图所示</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111303234.png" alt="image-20230411130340202"></p>
+<p>那么就会合并chunk0和chunk1 </p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111304237.png" alt="image-20230411130437209"></p>
+<h1 id="如何触发"><a href="#如何触发" class="headerlink" title="如何触发"></a>如何触发</h1><p>malloc_consolidate函数的强大功能我们上面已经了解到了 利用这一函数 可以轻松的获取smallbin或者largebin中的chunk </p>
+<p>对于有些题目来说 其会对申请chunk的size进行限制 利用这一函数就可以绕过限制 仍然获得释放chunk到这两个bin中的机会</p>
+<p>首先我们要知道 c语言中的标准输出和标准输入和标准错误都有着缓冲区 只不过其各自遵守的缓冲区原则不同</p>
+<p>具体的可以去看我相关博客 这里只需要知道 哪怕大部分的程序都会将缓冲区设置为无缓冲模式 但是如果scanf函数一次性读入过多的字符串 其还是会调用malloc申请一个大chunk</p>
+<p>而很多堆题 鉴于出题人的出题习惯或者是疏忽 在菜单页时选择的选项是由scanf函数来的</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111333662.png" alt="image-20230411133324635"></p>
+<p>这也解决了我刚学堆时的疑问 为什么大部分都要用到atoi函数来中转 而不选择scanf直接读</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">io.recvuntil(<span class="string">&quot;&gt;&quot;</span>)</span><br><span class="line">io.sendline(<span class="string">b&#x27;1&#x27;</span>*<span class="number">0x1000</span>)</span><br></pre></td></tr></table></figure>
+
+<p>就以这题举例 此时利用scanf读入0x1000字节的‘1’</p>
+<p>在此之前 没有进行任何的malloc调用 理论来说 此时heap应该还没有被初始化 但是在gdb中 我们是可以索引到top chunk的</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111336586.png" alt="image-20230411133618564"></p>
+<p>接着来查看一下top chunk的内容 可以看到都是1</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304111336206.png" alt="image-20230411133648176"></p>
+<p>也就是说其申请了一个大chunk用来存放过多的字符串 随后释放到bin中和top chunk合并了</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/04/01/musl/">musl Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#malloc-consolidate"><span class="toc-number">1.</span> <span class="toc-text">malloc_consolidate()</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E8%A7%A6%E5%8F%91"><span class="toc-number">2.</span> <span class="toc-text">如何触发</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
