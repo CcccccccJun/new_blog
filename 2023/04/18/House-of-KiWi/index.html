@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>House of KiWi | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - 共 $1 行","copy":"复制","copyFinish":"复制成功","expand":"展开"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>House of KiWi</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2023-04-18T13:49:59.000Z" id="date"> 2023-04-18</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2023-04-18T15:26:10.979Z" id="updated"> 2023-04-18</time></div></span><br><span>文章总字数: <div class="control">512</div></span><br><span>预计阅读时间: <div class="control">2 分钟</div></span></div></div><hr><div id="post-content"><p>一种基于setcontext来在开启沙盒的堆题中实现orw的利用链</p>
+<p>对于libc2.29以后的版本 setcontext控制rsp寄存器的值由rdi寄存器转化为了rdx寄存器</p>
+<p>相比之很容易控制的rdi寄存器 rdx寄存器要想修改为我们预期的值 还是比较麻烦的</p>
+<p>我们之前有提到的一种办法是利用libc文件中可以借rdi寄存器来控制rdx寄存器  但是今天这条链可以直接控制rdx寄存器</p>
+<p>下面就来学习一下 </p>
+<h2 id="实现逻辑分析"><a href="#实现逻辑分析" class="headerlink" title="实现逻辑分析"></a>实现逻辑分析</h2><p>整条链的实现逻辑主要是基于fflush(stderr)这个函数的调用</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202304182223769.png" alt="image-20230418222309660"></p>
+<p>函数的内部调用了_IO_file_sync函数  并且其rdx寄存器的值恒为 _IO_helper_jumps<br>由图上我们很容易能看出IO_file_sync函数的调用是基于rbp寄存器的寻址 而rbp寄存器的值恒为IO_file_jumps 所以如果我们能够修改其地址+0x60处为setcontext 即可 并且rdx寄存器此时的值也被我们熟知 如果我们修改其+0xa0和0xa8处为相对的地址 就可以达到劫持程序执行流的目的（setcontext部分的知识本文不会重复介绍）</p>
+<p>问题在于如何调用到fllush函数  </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line">__malloc_assert (<span class="type">const</span> <span class="type">char</span> *assertion, <span class="type">const</span> <span class="type">char</span> *file, <span class="type">unsigned</span> <span class="type">int</span> line,</span><br><span class="line">       <span class="type">const</span> <span class="type">char</span> *function)</span><br><span class="line">&#123;</span><br><span class="line">(<span class="type">void</span>) __fxprintf (<span class="literal">NULL</span>, <span class="string">&quot;%s%s%s:%u: %s%sAssertion `%s&#x27; failed.\n&quot;</span>,</span><br><span class="line">           __progname, __progname[<span class="number">0</span>] ? <span class="string">&quot;: &quot;</span> : <span class="string">&quot;&quot;</span>,</span><br><span class="line">           file, line,</span><br><span class="line">           function ? function : <span class="string">&quot;&quot;</span>, function ? <span class="string">&quot;: &quot;</span> : <span class="string">&quot;&quot;</span>,</span><br><span class="line">           assertion);</span><br><span class="line">fflush (<span class="built_in">stderr</span>);</span><br><span class="line"><span class="built_in">abort</span> ();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>把目标转移到了assert函数后 问题在于如何触发assert</p>
+<p>一共有两种办法 一种是基于top chunk 一种是基于largebin chunk</p>
+<p>先来讲前者</p>
+<p>我们知道 对于小于阈值的chunk 如果bin中没有合适的chunk 就会从top chunk中分割来分配</p>
+<p>如果申请的chunk大小比top chunk大呢 这种情况top chunk就会调用sysmalloc函数</p>
+<p>在这个函数中 存在着对于assert的调用</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">assert ((old_top == initial_top (av) &amp;&amp; old_size == <span class="number">0</span>) ||</span><br><span class="line">        ((<span class="type">unsigned</span> <span class="type">long</span>) (old_size) &gt;= MINSIZE &amp;&amp;</span><br><span class="line">         prev_inuse (old_top) &amp;&amp;</span><br><span class="line">         ((<span class="type">unsigned</span> <span class="type">long</span>) old_end &amp; (pagesize - <span class="number">1</span>)) == <span class="number">0</span>));</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/04/17/GDOUCTF2023/">GDOUCTF2023 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="文章目录">≡</a><a id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://ak.hypergryph.com/assets/index/images/ak/pc/faction/1.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">实现逻辑分析</span></a></li></ol></div></div><footer><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
