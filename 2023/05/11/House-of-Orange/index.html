@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>House of Orange | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - 共 $1 行","copy":"复制","copyFinish":"复制成功","expand":"展开"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>House of Orange</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2023-05-11T02:34:57.000Z" id="date"> 2023-05-11</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2023-05-11T05:38:46.292Z" id="updated"> 2023-05-11</time></div></span><br><span>文章总字数: <div class="control">1.5k</div></span><br><span>预计阅读时间: <div class="control">5 分钟</div></span></div></div><hr><div id="post-content"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这一个house of链应该算是最早的伪造io file来达到攻击目的的链了</p>
+<p>借助这个来熟悉一下file结构体 这个链本身现在已经失去价值了 只能适用于libc2.23及以前的版本</p>
+<p>这条链可以突破没有free函数的限制 并且达到劫持程序执行流的目的</p>
+<h1 id="File结构"><a href="#File结构" class="headerlink" title="File结构"></a>File结构</h1><p>File是linux标准IO库中用来描述文件的结构 程序的许多操作会涉及到遍历File结构体来获取对应指针</p>
+<p>file结构的本质上是一个链表 链表头为IO_list_all 每个file结构的chain域指向下一个file结构</p>
+<p>每个程序启动时有三个文件流是默认打开的 就是stdin stdout stderr</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111040002.png" alt="image-20230511104043909"></p>
+<p>至于vtable 是一个存放许多函数指针的结构体</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111042480.png" alt="image-20230511104224447"></p>
+<p>house of orange所涉及到的就是伪造上述的这两个结构体 从而劫持程序执行流</p>
+<h1 id="链路流程分析"><a href="#链路流程分析" class="headerlink" title="链路流程分析"></a>链路流程分析</h1><p>我们知道 当plmalloc初始化堆后 如果bin中没有合适的chunk 就会从top chunk中分配所需要的chunk 那么如果所申请的chunk大于top chunk呢 分两种情况</p>
+<p>一种是申请的chunk的size过大 需要通过mmap来分配 那么这种情况分配到的chunk就会位于libc地址上的一块空间</p>
+<p>还有一种是top chunk过小 那么此时就会把top chunk释放进入unsortedbin 随后再次申请一个top chunk 从新的top chunk中分配所需要的chunk 不过释放top chunk还需要进行一次判断 下面来看一下源码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* There are no usable arenas and mmap also failed.  */</span></span><br><span class="line"> <span class="keyword">if</span> (av == <span class="literal">NULL</span>)</span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"> <span class="comment">/* Record incoming configuration of top */</span></span><br><span class="line"></span><br><span class="line"> old_top = av-&gt;top;</span><br><span class="line"> old_size = chunksize (old_top);</span><br><span class="line"> old_end = (<span class="type">char</span> *) (chunk_at_offset (old_top, old_size));</span><br><span class="line"></span><br><span class="line"> brk = snd_brk = (<span class="type">char</span> *) (MORECORE_FAILURE);</span><br><span class="line"></span><br><span class="line"> <span class="comment">/*</span></span><br><span class="line"><span class="comment">    If not the first time through, we require old_size to be</span></span><br><span class="line"><span class="comment">    at least MINSIZE and to have prev_inuse set.</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"></span><br><span class="line"> assert ((old_top == initial_top (av) &amp;&amp; old_size == <span class="number">0</span>) ||</span><br><span class="line">         ((<span class="type">unsigned</span> <span class="type">long</span>) (old_size) &gt;= MINSIZE &amp;&amp;</span><br><span class="line">          prev_inuse (old_top) &amp;&amp;</span><br><span class="line">          ((<span class="type">unsigned</span> <span class="type">long</span>) old_end &amp; (pagesize - <span class="number">1</span>)) == <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line"> <span class="comment">/* Precondition: not enough current space to satisfy nb request */</span></span><br><span class="line"> assert ((<span class="type">unsigned</span> <span class="type">long</span>) (old_size) &lt; (<span class="type">unsigned</span> <span class="type">long</span>) (nb + MINSIZE));</span><br></pre></td></tr></table></figure>
+
+<p>可以看到需要进行两次的assert检查</p>
+<p>第一次 对top chunk的大小进行检查 需要大于MINSIZE 并且Prev_inuse位要为1 top chunk的addr和size加起来还要满足刚好为一个页</p>
+<p>我们覆盖top chunk的size 使得其不足以供我们分配 这个size要使得top chunk的结尾后3位为000</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111102768.png" alt="image-20230511110256747"></p>
+<p>此时我们覆盖top chunk的size 接下来申请一个大于其size的chunk top chunk就会被释放进入unsortedbin</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111103023.png" alt="image-20230511110308999"></p>
+<p>通过这种办法 可以在程序没有给予释放chunk的函数下 获得一个unsortedbin中的chunk 而在2.23及以下的版本 unsortedbin attack来任意写一个main_arena地址还是可行的 这意味着我们拥有了一次任意写的机会</p>
+<p>我们上面说到过 file结构本质是一个链表 是通过链表头的IO_list_all的chain域来链接到下一个的file结构体</p>
+<p>那么如果我们覆盖IO_list_all指针存放的值 接着伪造一个file结构体 把chain域覆盖成fake_file的地址 就可以实现扰乱程序索引file结构体</p>
+<p>但是unsortedbin attack任意写的功效是有限的 只能写入main_arena+88的地址 那么根据偏移 其chain域会索引到main_arena+88+0x68处</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">0x0   _flags</span><br><span class="line">0x8   _IO_read_ptr</span><br><span class="line">0x10  _IO_read_end</span><br><span class="line">0x18  _IO_read_base</span><br><span class="line">0x20  _IO_write_base</span><br><span class="line">0x28  _IO_write_ptr</span><br><span class="line">0x30  _IO_write_end</span><br><span class="line">0x38  _IO_buf_base</span><br><span class="line">0x40  _IO_buf_end</span><br><span class="line">0x48  _IO_save_base</span><br><span class="line">0x50  _IO_backup_base</span><br><span class="line">0x58  _IO_save_end</span><br><span class="line">0x60  _markers</span><br><span class="line">0x68  _chain</span><br><span class="line">0x70  _fileno</span><br><span class="line">0x74  _flags2</span><br><span class="line">0x78  _old_offset</span><br><span class="line">0x80  _cur_column</span><br><span class="line">0x82  _vtable_offset</span><br><span class="line">0x83  _shortbuf</span><br><span class="line">0x88  _lock</span><br><span class="line">0x90  _offset</span><br><span class="line">0x98  _codecvt</span><br><span class="line">0xa0  _wide_data</span><br><span class="line">0xa8  _freeres_list</span><br><span class="line">0xb0  _freeres_buf</span><br><span class="line">0xb8  __pad5</span><br><span class="line">0xc0  _mode</span><br><span class="line">0xc4  _unused2</span><br><span class="line">0xd8  vtable</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111112871.png" alt="image-20230511111233849"></p>
+<p>而这个偏移的地址 刚好是smallbins中 0x60的链表所位于的地址 所以我们可以释放一个0x60大小的chunk到smallbins 随后任意写覆盖io_list_all为main_arena+88 这样索引到的下一个file结构体就是smallbin chunk  伪造file结构体 就可以在这个chunk中伪造</p>
+<p>接着是如何触发的问题 只是伪造肯定不能满足劫持执行流的目的 同时如何伪造也要根据触发的方式</p>
+<p>这里涉及到了FSOP的知识点</p>
+<p>其是通过IO_flush_all_lockp这个函数 这个函数会刷新io_list_all链表中的所有文件流 相当于对每个函数调用了fflush函数</p>
+<p>而这个函数会调用到file结构体中vtable结构体中的IO_overflow函数 </p>
+<p>如下图 我们这样伪造一个file结构体</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111133873.png" alt="image-20230511113348820"></p>
+<p>其vtable也被我们所伪造 来看以下vtable</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111134659.png" alt="image-20230511113416630"></p>
+<p>将其overflow函数指针伪造成system 接下来利用gdb动调进入IO_flush_all_lockp函数 看看其调用system函数时的rdi参数时什么</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111137278.png"></p>
+<p>可以看到rdi参数实际上是我们所伪造的file结构体的首地址 所以只要使得fake file的首地址为&#x2F;bin&#x2F;sh即可</p>
+<p>那么如何触发IO_flush_all_lockp函数呢 一共有三种选择</p>
+<ol>
+<li><p>当 libc 执行 abort 流程时</p>
+</li>
+<li><p>当执行 exit 函数时</p>
+</li>
+<li><p>当执行流从 main 函数返回时</p>
+</li>
+</ol>
+<p>这里使用的是第一种办法 相对来说更加通用</p>
+<p>这个abort流程是什么呢 实际上我们破坏了堆结构 导致调用malloc_printerr函数来输出错误信息</p>
+<p>至于具体是哪里的我没动调出来 大致的猜测是unsortedbin的bk指向的地址没有构成完整的双向链表导致的进入while循环 但是这个if分支为啥会成立就是个疑点了</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (__builtin_expect (victim-&gt;size &lt;= <span class="number">2</span> * SIZE_SZ, <span class="number">0</span>)</span><br><span class="line">              || __builtin_expect (victim-&gt;size &gt; av-&gt;system_mem, <span class="number">0</span>))</span><br><span class="line">            malloc_printerr (check_action, <span class="string">&quot;malloc(): memory corruption&quot;</span>,</span><br><span class="line">                             chunk2mem (victim), av);</span><br></pre></td></tr></table></figure>
+
+<p>malloc_printerr函数种会调用__libc_message函数</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111330571.png" alt="image-20230511133005494"></p>
+<p>这个函数的内部就调用了abort函数</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111331891.png" alt="image-20230511133146868"></p>
+<p>而abort内部调用了_IO_flush_all_lockp函数 </p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305111332940.png" alt="image-20230511133220920"></p>
+<p>于是就可以调用到fake file的io_overflow函数</p>
+<p>同时我们再来看一下_IO_flush_all_lockp函数怎样才能调用了file结构体的io_overflow函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (((fp-&gt;_mode &lt;= <span class="number">0</span> &amp;&amp; fp-&gt;_IO_write_ptr &gt; fp-&gt;_IO_write_base))</span><br><span class="line">        &amp;&amp; _IO_OVERFLOW (fp, EOF) == EOF)</span><br><span class="line">      &#123;</span><br><span class="line">        result = EOF;</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要使得mode小于等于0 IO_write_ptr大于IO_write_base</p>
+<p>那么就使得io_write_ptr &#x3D; 1 io_write_base &#x3D; mode &#x3D; 0即可</p>
+<h1 id="真题分析"><a href="#真题分析" class="headerlink" title="真题分析"></a>真题分析</h1><h2 id="houseoforange-hitcon-2016"><a href="#houseoforange-hitcon-2016" class="headerlink" title="houseoforange hitcon 2016"></a>houseoforange hitcon 2016</h2><div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/05/09/tcache-stashing-unlink-attack/">tcache stashing unlink attack Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="文章目录">≡</a><a id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305061934765.jpg" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#File%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">File结构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%93%BE%E8%B7%AF%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">链路流程分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9C%9F%E9%A2%98%E5%88%86%E6%9E%90"><span class="toc-number">4.</span> <span class="toc-text">真题分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#houseoforange-hitcon-2016"><span class="toc-number">4.1.</span> <span class="toc-text">houseoforange hitcon 2016</span></a></li></ol></li></ol></div></div><footer><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
