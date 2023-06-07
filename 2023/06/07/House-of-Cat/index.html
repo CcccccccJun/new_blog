@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>House of Cat | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - 共 $1 行","copy":"复制","copyFinish":"复制成功","expand":"展开"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>House of Cat</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2023-06-07T06:08:44.000Z" id="date"> 2023-06-07</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2023-06-07T13:59:49.551Z" id="updated"> 2023-06-07</time></div></span><br><span>文章总字数: <div class="control">1.2k</div></span><br><span>预计阅读时间: <div class="control">4 分钟</div></span></div></div><hr><div id="post-content"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>2.34以上的版本取消了hook的存在 导致我们getshell的操作只能通过其他办法了 于是house of的链学习就成为了必要 house of cat这条链 只需要一次largebinattack的机会 随后就是伪造io结构 就可以做到劫持程序执行流 诸如setcontext等的利用</p>
+<h2 id="链路分析"><a href="#链路分析" class="headerlink" title="链路分析"></a>链路分析</h2><p>触发io的方式和house of kiwi相似 都是通过assert输出报错 不过还是有所不同 接下来跟着我来分析一下</p>
+<p>截止到__main_assert函数的时候 链路都和house of kiwi一致 这里就不复述了</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071940662.png" alt="image-20230607194023571"></p>
+<p>不同的是 kiwi是利用fflush触发fake file 本次我们是通过fxprintf中的函数 来实现任意函数调用</p>
+<p>原理是因为vtable虽然在2.24以后加入了检测 但是由于检测不严格 对于一些轻微的偏移可以被无视 所以我们可以修改vtable为其他的表并且加上偏移 就可以实现表内的函数任意调用</p>
+<p>而在这些函数中 会存在一些以寄存器寻址的call指令 利用这一点我们就可以劫持程序执行流</p>
+<p>本次利用的关键就是_IO_wfile_seekoff函数 其内部会调用IO_switch_to_wget_mode函数 该函数内部存在一个可以被我们控制的call指令 </p>
+<p>我们首先利用largebinattack将stderr的地址覆盖为堆地址 随后在堆中伪造结构体 将vtable结构体修改为_IO_wfile_jumps+0x10  这样就可以顺利调用到_IO_wfile_seekoff函数 </p>
+<p>接着回到gdb 我们跟进一下fxprintf函数 一起完整的过一遍链</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071948385.png" alt="image-20230607194845339"></p>
+<p>我们还需要进行两次繁琐的函数跳转 随后才能到达利用的关键函数点</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071949732.png" alt="image-20230607194918695"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071950790.png" alt="image-20230607195056744"></p>
+<p>这里 就会进入被我们所伪造的vtable表固定的偏移中 在我们上面那样设置的情况下 最后是会调用到_IO_wfile_seekoff函数 我们跟进一下</p>
+<p>可以看到 其内部存在IO_switch_to_wget_mode函数 我们跟进一下</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071952330.png" alt="image-20230607195213304"></p>
+<p>这里存在一个可控的call指令 rax的值可以被我们所操控 是写入到stderr上的堆地址固定偏移的一块地址</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071952818.png" alt="image-20230607195245775"></p>
+<p>如果我们在此处地方写入打setcontext用的万能gadget 再搭配上setcontext 就可以做到控制程序执行流</p>
+<p>链路其实是比较清晰的 我们主要是来看一下如何伪造 很多网上的资料其实伪造部分都没有讲清楚</p>
+<h2 id="伪造分析"><a href="#伪造分析" class="headerlink" title="伪造分析"></a>伪造分析</h2><p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306071955725.png" alt="image-20230607195552637"></p>
+<p>首先我们提供一个完整的fake file构成 我们根据上面所圈出来的框 依次来讲解为什么要如此设定 需要绕过哪些地方 因为授人以鱼不如授人以渔  教会如何利用好动调来伪造结构体才是最重要的  虽然这篇文章也不能让你马上掌握这个能力</p>
+<p>首先是灰框部分 之所以要这样布局 我们先来看前面的这个libc地址 要明白其用意何在 我们首先要定义到需要这个参数的位置 我的办法是直接n 通常会直接卡在某个语句或者触发某个报错 通过这个办法来判断执行到了哪个汇编语句</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072141373.png" alt="image-20230607214112329"></p>
+<p>可以看到 是触发了进程的终止 那么这个一般是由于vtable表的检测失败引起的</p>
+<p>为了佐证我们的猜想 我们找到触发检测的函数 随后直接n 看能不能通过这个函数 结果发现不行 印证了猜想 那么我们要想绕过这一点 显然就是靠最近的一次判断 只要不跳转到执行vtable表检测的地方就行了</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072142170.png" alt="image-20230607214227141"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072143662.png" alt="image-20230607214344636"></p>
+<p>关键的两个寄存器 就是rcx和rax了 rcx最后一次的复制和rax有关系 而rax当时的值是一个相对固定的</p>
+<p>rax最初的值是一个相对固定的 索引到的是一个libc地址</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072145818.png" alt="image-20230607214540799"></p>
+<p>而执行到sub的时候 对应的参数是一个栈上的地址</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072147683.png" alt="image-20230607214732659"></p>
+<p>显然sub后的rax值我们并没有办法改变 那么重点就是放在通过r12来影响rax的值</p>
+<p>注意到最开始r12的赋值语句 和rbp有关系 而rbp的值正是我们的fake file的起始地址 而对应的偏移正是我们所说的灰色部分 但是由于赋值完以后还要减去rdi寄存器的值 所以最后赋值给rax的值最好比较大一点</p>
+<p>接下来 我们根据程序执行流跟进到_IO_wfile_seekoff函数 可以看到要想成功执行到Io_switch_to_wget_mode函数 就需要我们通过上面的cmp判断 rcx和rdx这两个寄存器 分别溯源一下最后一次赋值</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202306072158957.png" alt="image-20230607215836928"></p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/06/06/House-of-Emma/">House of Emma Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="文章目录">≡</a><a id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305061934765.jpg" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%93%BE%E8%B7%AF%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">链路分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%AA%E9%80%A0%E5%88%86%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">伪造分析</span></a></li></ol></div></div><footer><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
