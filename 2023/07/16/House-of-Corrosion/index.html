@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>House of Corrosion | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>House of Corrosion</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2023-07-16T08:44:01.000Z" id="date"> 2023-07-16</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-07-16T09:27:14.722Z" id="updated"> 2023-07-16</time></div></span><br><span>Word Count: <div class="control">511</div></span><br><span>Read Time: <div class="control">1 min</div></span></div></div><hr><div id="post-content"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>关于fastbin的一种利用手法 目前做题中没有做到需要这条链的</p>
+<p>偶然看到vnctf2022的压轴题考到了这种方法 就索性来学习一下</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>主要是通过global_max_fast来实现的 其规定了fastbin链表的最大范围 如果我们将其修改为一个很大的值 那么就会导致超出范围的chunk被释放到了fastbin</p>
+<p>和tcachebin的mp+80利用类似 其会导致tcache的结构体的entry指针数组无法容纳下足够多的链表头指针</p>
+<p>fastbin也有自己的用来管理链表头的数组 我们称之为fastbinY 其位于main_arena上</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161711477.png" alt="image-20230716171101455"></p>
+<p>如果我们通过修改global_max_fast 从而把一个大chunk释放到了fastbin中 那么其指针就会超过fastbinY的范围 从而延申到高地址处 那么我们也就相当于可以往fastbinY高地址处任意写一个堆地址</p>
+<h2 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h2><p>首先我们想办法将global_max_fast的值修改为一个极大值 这里我选择的办法是largebin attack</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161715171.png" alt="image-20230716171532147"></p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161716334.png" alt="image-20230716171629313"></p>
+<p>随后我们计算一下fastbinY和我们想要写入堆地址的偏移 如上图 这个时候和_IO_list_all偏移为0xa10</p>
+<p>那么我们最后只需要申请一个  0x10+0xa10*2的chunk 并且将其释放 那么其指针就会被放入_IO_list_all</p>
+<p>这一点可以延申出什么利用效果呢 如果题目存在UAF漏洞 那么我们就可以泄露fastbinY后的内存空间上的任意数据</p>
+<p>比如此时我想要泄露main_arena+784处的内容</p>
+<p>那么我就需要申请一个  2*（784-16）+0x10 也就是0x610的chunk</p>
+<p>此时再次释放后 由于链表的并入机制 此时的chunk地址就会填入main_arena+784</p>
+<p>而其原本的内容 就会被充当chunk的fd域</p>
+<p>同理 如果我们修改已经被释放chunk的fd域 随后再次申请该chunk出来 此时的fd域就会被充当链表头 那么就相当于了一次任意写</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/07/16/House-of-apple2/">House of apple2 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307062245113.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A9%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">利用</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
